@@ -5,9 +5,9 @@
       "generator": "Unix Makefiles",
       "configurationType" : "Debug",
       "buildRoot":  "${projectDir}/build/${name}",
-      "cmakeCommandArgs":  "",
+      "cmakeCommandArgs": "",
       "buildCommandArgs": "",
-      "ctestCommandArgs":  "",
+      "ctestCommandArgs": "",
       "variables": [{
         "name": "TEST_VAR",
         "value": "ON"

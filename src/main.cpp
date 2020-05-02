@@ -1,6 +1,9 @@
 #include <bits/stdc++.h>
 #include <iostream>
 #include <chrono>
+#include <vector>
+
+#include "wordcount.h"
 
 inline bool isInteger(const std::string & s)
 {
@@ -12,9 +15,38 @@ inline bool isInteger(const std::string & s)
    return (*p == 0);
 }
 
-int main() {
+/*********************************************
+bool findWord(string, vector<WordCount>) -
+Linear search for word in vector of structures
+**********************************************/
+bool findWord(std::string s, std::vector<WordCount>& words){
+  // Search through vector
+  for (auto& r : words){
+    if (r.word.compare(s) == 0){   // Increment count of object if found again
+      r.iCount();
+      return true;
+    }
+  }
+  return false;
+}
+
+int main(int argc, const char *argv[]) {
+  // Exit if no filename provided
+  if (!argv[1]){
+    std::cout << "Please provide a correct path and filename." << '\n';
+    exit(0);
+  }
+
+
   // Open the dictionary file to read data
-  std::ifstream inputFile("demodata/de_full.txt");
+  std::ifstream inputFile(argv[1]);
+
+  // Exit if filename is wrong
+  if (!inputFile){
+    std::cout << "File not found. Please provide a correct path and filename." << '\n';
+    exit(0);
+  }
+
   std::string line;
   long count;
 
@@ -51,17 +83,33 @@ int main() {
   std::string dictWord;
   std::string dictCount;
 
+  // Vector of words
+  std::vector<WordCount> words;
+
   // Iterate through dict file from top to bottom
   for (long i = 0; std::getline(inputFile, line); ++i){
     count--;
-    // std::getline(inputFile, line);
-    dictWord = line.substr(0, line.find(" "));
-    dictCount = line.substr(line.find(" ") + 1);
-    if (isInteger(dictCount)){
-      int frequency = (count / divider) + 50;
-      // Format: word=der,f=216,flags=,originalFreq=216
-      outputFile << " word=" << dictWord << ",f=" << frequency << ",flags=,originalFreq=" << frequency << '\n';
-    }
+
+    std::istringstream iss(line);
+    do{
+        std::string subs;
+        iss >> subs;
+        if (findWord(subs, words) == true){
+          continue;
+        } else {
+          WordCount tempO(subs);     // Make structure object with n
+          words.push_back(tempO);     // Push structure object into words vector
+        }
+        // std::cout << "Substring: " << subs << std::endl;
+    } while (iss);
+  }
+
+  // Sort word vector
+  sort(words.begin(), words.end(),CompareWordCount);
+
+  // Export vector to restult file
+  for (long i = 0; i < words.size(); ++i){
+    outputFile << words[i].word << ":" << words[i].count << '\n';
   }
 
   // Close files

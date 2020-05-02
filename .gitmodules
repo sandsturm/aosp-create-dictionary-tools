@@ -1,0 +1,3 @@
+[submodule "Dictionaries"]
+	path = Dictionaries
+	url = git@github.com:titoBouzout/Dictionaries.git
