@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "wordcount.h"
+#include "spellcheck.h"
 
 inline bool isInteger(const std::string & s)
 {
@@ -30,7 +31,45 @@ bool findWord(std::string s, std::vector<WordCount>& words){
   return false;
 }
 
+/*********************************************
+bool findSpellcheck(string, vector<Spellcheck>) -
+Linear search for word in vector of structures
+**********************************************/
+bool findSpellcheck(std::string s, std::vector<Spellcheck>& spellcheck){
+  // Search through vector
+  for (auto& r : spellcheck){
+    if (r.word.compare(s) == 0){
+      return true;
+    }
+  }
+  return false;
+}
+
+/****************************************************
+Normalize(string) -
+Converts string to lowercase and removes punctuation.
+*****************************************************/
+std::string Normalize(std::string s){
+    // Initialize variables
+    std::string nString;
+    char c;
+
+    // Make all text lowercase
+    for (int i = 0; i < s.length(); i++){
+        c = s[i];
+        c = tolower(c);
+        if (isalpha(c) || isblank(c))
+            nString += c;
+    }
+
+    // Return converted string
+    return nString;
+}
+
 int main(int argc, const char *argv[]) {
+  std::string line;
+  long count;
+
   // Exit if no filename provided
   if (!argv[1]){
     std::cout << "Please provide a correct path and filename." << '\n';
@@ -47,12 +86,38 @@ int main(int argc, const char *argv[]) {
     exit(0);
   }
 
-  std::string line;
-  long count;
+  // Create vector for spellcheck
+  std::vector<Spellcheck> spellcheck;
+
+  // Read spellcheck file
+  std::ifstream spellcheckFile("demodata/German_de_DE.dic");
+
+  // Iterate through spellcheck file
+  for (long i = 0; std::getline(spellcheckFile, line, '/'); ++i){
+    std::istringstream iss(line);
+    int first = 0;
+    do{
+      ++first;
+      std::string subs;
+      iss >> subs;
+      if (first == 2){
+        spellcheck.push_back(subs);
+      }
+    } while (iss);
+  }
+
+  // Close spellcheckFile since everthing is in the spellcheck vector
+  std::cout << "Spellcheck file loaded." << '\n';
+  spellcheckFile.close();
+
+  std::string status = "Lines read:  ";
 
   // Count every line of the file
-  for (count = 0; std::getline(inputFile, line); ++count)
-  ;
+  for (count = 0; std::getline(inputFile, line); ++count){
+    std::cout << status << count << '\r';
+  }
+
+  std::cout << status << count << '\n';
 
   // Calculate the divider to ensure results between 50 and 254
   // int divider = int (count / 205) + 1;
@@ -86,9 +151,24 @@ int main(int argc, const char *argv[]) {
   // Vector of words
   std::vector<WordCount> words;
 
+  // Store file length
+  long length = count;
+
+  status = "Parsed lines: ";
+
+  int buffer = 0;
+  int localbuffer;
+
   // Iterate through dict file from top to bottom
   for (long i = 0; std::getline(inputFile, line); ++i){
     count--;
+
+    localbuffer = 100 - (count * 100/length);
+
+    if (localbuffer > buffer){
+      std::cout << status << std::to_string(buffer) << "%" << '\n';
+      buffer = localbuffer;
+    }
 
     std::istringstream iss(line);
     do{
@@ -97,13 +177,19 @@ int main(int argc, const char *argv[]) {
         if (findWord(subs, words) == true){
           continue;
         } else {
-          WordCount tempO(subs);     // Make structure object with n
+          std::string word = subs;
+          // Check if normalized word is in the spellcheck and add it
+          if (findSpellcheck(Normalize(word), spellcheck) && !findSpellcheck(word, spellcheck)){
+            // Check if same word is available in Capital letters
+            word = Normalize(word);
+          }
+          WordCount tempO(word);
           words.push_back(tempO);     // Push structure object into words vector
         }
-        // std::cout << "Substring: " << subs << std::endl;
     } while (iss);
   }
 
+  std::cout << status << "100%" << '\n';
   // Sort word vector
   sort(words.begin(), words.end(),CompareWordCount);
 
@@ -112,9 +198,13 @@ int main(int argc, const char *argv[]) {
     outputFile << words[i].word << ":" << words[i].count << '\n';
   }
 
+  std::cout << "Sorted words." << '\n';
+
   // Close files
   inputFile.close();
   outputFile.close();
+
+  std::cout << "Completed. Wrote output." << '\n';
 
   return 0;
 }
