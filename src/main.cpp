@@ -101,6 +101,8 @@ int main(int argc, const char *argv[]) {
       std::string subs;
       iss >> subs;
       // TODO Check token!
+      // Check if the / delimiter is in the line.
+      // There are some lines without delimiter.
       std::string token = subs.substr(0, subs.find(delimiter));
       if (token.length() > 0){
         subs = token;
@@ -121,10 +123,6 @@ int main(int argc, const char *argv[]) {
   }
 
   std::cout << status << count << '\n';
-
-  // Calculate the divider to ensure results between 50 and 254
-  // int divider = int (count / 205) + 1;
-  int divider = int(count / 205) + 1;
 
   // Return to the beginning of the input file
   inputFile.clear();
@@ -163,7 +161,7 @@ int main(int argc, const char *argv[]) {
   int localbuffer;
 
   // Iterate through dict file from top to bottom
-  for (long i = 0; std::getline(inputFile, line) && i < 100000; ++i){
+  for (long i = 0; std::getline(inputFile, line) && i < 10000; ++i){
     count--;
 
     localbuffer = 100 - (count * 100/length);
@@ -175,22 +173,25 @@ int main(int argc, const char *argv[]) {
 
     std::istringstream iss(line);
     do{
-        std::string subs;
-        iss >> subs;
+      std::string subs;
+      iss >> subs;
 
-        // Remove punctuation
-        std::string word;
-        std::remove_copy_if(subs.begin(), subs.end(),
-                      std::back_inserter(word), //Store output
-                      std::ptr_fun<int, int>(&std::ispunct)
-                     );
+      // Remove punctuation
+      std::string word;
+      std::remove_copy_if(subs.begin(), subs.end(),
+                    std::back_inserter(word), //Store output
+                    std::ptr_fun<int, int>(&std::ispunct)
+                   );
 
-       // Check if normalized word is in the spellcheck and add it
-       if (spellcheck.find(word) == spellcheck.end()){ // If word with capital letter cannot be found
-         if (spellcheck.find(Normalize(word)) != spellcheck.end()){ // but can be found with lower case letter, take this one
-           word = Normalize(word);
-         }
-       }
+      // TODO Check why empty word is provided by function
+      // Exclude empty words and numbers
+      if (word.length() > 0 && isInteger(word) == false){
+        // Check if normalized word is in the spellcheck and add it
+        if (spellcheck.find(word) == spellcheck.end()){ // If word with capital letter cannot be found
+          if (spellcheck.find(Normalize(word)) != spellcheck.end()){ // but can be found with lower case letter, take this one
+            word = Normalize(word);
+          }
+        }
 
         if (findWord(word, words) == true){
           continue;
@@ -198,6 +199,7 @@ int main(int argc, const char *argv[]) {
           WordCount tempO(word);
           words.push_back(tempO);     // Push structure object into words vector
         }
+      }
     } while (iss);
   }
 
@@ -205,9 +207,16 @@ int main(int argc, const char *argv[]) {
   // Sort word vector
   sort(words.begin(), words.end(),CompareWordCount);
 
+  // Calculate the divider to ensure results between 50 and 254
+  // int divider = int (count / 205) + 1;
+  int divider = int(words.size() / 205) + 1;
+
   // Export vector to restult file
   for (long i = 0; i < words.size(); ++i){
-    outputFile << words[i].word << ":" << words[i].count << '\n';
+    int frequency = ((words.size() - i) / divider) + 50;
+
+    // Format: word=der,f=216,flags=,originalFreq=216
+    outputFile << " word=" << words[i].word << ",f=" << frequency << ",flags=,originalFreq=" << frequency << '\n';
   }
 
   std::cout << "Sorted words." << '\n';
