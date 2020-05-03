@@ -86,23 +86,26 @@ int main(int argc, const char *argv[]) {
     exit(0);
   }
 
-  // Create vector for spellcheck
-  std::vector<Spellcheck> spellcheck;
+  // Create an array for spellcheck
+  std::set<std::string> spellcheck;
 
   // Read spellcheck file
   std::ifstream spellcheckFile("demodata/German_de_DE.dic");
 
   // Iterate through spellcheck file
-  for (long i = 0; std::getline(spellcheckFile, line, '/'); ++i){
+  for (long i = 0; std::getline(spellcheckFile, line); ++i){
     std::istringstream iss(line);
+    std::string delimiter = "/";
     int first = 0;
     do{
-      ++first;
       std::string subs;
       iss >> subs;
-      if (first == 2){
-        spellcheck.push_back(subs);
+      // TODO Check token!
+      std::string token = subs.substr(0, subs.find(delimiter));
+      if (token.length() > 0){
+        subs = token;
       }
+      spellcheck.insert(subs);
     } while (iss);
   }
 
@@ -160,7 +163,7 @@ int main(int argc, const char *argv[]) {
   int localbuffer;
 
   // Iterate through dict file from top to bottom
-  for (long i = 0; std::getline(inputFile, line); ++i){
+  for (long i = 0; std::getline(inputFile, line) && i < 100000; ++i){
     count--;
 
     localbuffer = 100 - (count * 100/length);
@@ -174,15 +177,24 @@ int main(int argc, const char *argv[]) {
     do{
         std::string subs;
         iss >> subs;
-        if (findWord(subs, words) == true){
+
+        // Remove punctuation
+        std::string word;
+        std::remove_copy_if(subs.begin(), subs.end(),
+                      std::back_inserter(word), //Store output
+                      std::ptr_fun<int, int>(&std::ispunct)
+                     );
+
+       // Check if normalized word is in the spellcheck and add it
+       if (spellcheck.find(word) == spellcheck.end()){ // If word with capital letter cannot be found
+         if (spellcheck.find(Normalize(word)) != spellcheck.end()){ // but can be found with lower case letter, take this one
+           word = Normalize(word);
+         }
+       }
+
+        if (findWord(word, words) == true){
           continue;
         } else {
-          std::string word = subs;
-          // Check if normalized word is in the spellcheck and add it
-          if (findSpellcheck(Normalize(word), spellcheck) && !findSpellcheck(word, spellcheck)){
-            // Check if same word is available in Capital letters
-            word = Normalize(word);
-          }
           WordCount tempO(word);
           words.push_back(tempO);     // Push structure object into words vector
         }
