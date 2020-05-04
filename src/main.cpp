@@ -55,7 +55,7 @@ std::string Normalize(std::string s){
     char c;
 
     // Make all text lowercase
-    for (int i = 0; i < s.length(); i++){
+    for (int i = 0; i < int(s.length()); i++){
         c = s[i];
         c = tolower(c);
         if (isalpha(c) || isblank(c))
@@ -96,7 +96,6 @@ int main(int argc, const char *argv[]) {
   for (long i = 0; std::getline(spellcheckFile, line); ++i){
     std::istringstream iss(line);
     std::string delimiter = "/";
-    int first = 0;
     do{
       std::string subs;
       iss >> subs;
@@ -161,7 +160,7 @@ int main(int argc, const char *argv[]) {
   int localbuffer;
 
   // Iterate through dict file from top to bottom
-  for (long i = 0; std::getline(inputFile, line) && i < 10000; ++i){
+  for (long i = 0; std::getline(inputFile, line) && i < 100000; ++i){
     count--;
 
     localbuffer = 100 - (count * 100/length);
@@ -212,7 +211,7 @@ int main(int argc, const char *argv[]) {
   int divider = int(words.size() / 205) + 1;
 
   // Export vector to restult file
-  for (long i = 0; i < words.size(); ++i){
+  for (long i = 0; i < long(words.size()); ++i){
     int frequency = ((words.size() - i) / divider) + 50;
 
     // Format: word=der,f=216,flags=,originalFreq=216
