@@ -5,7 +5,7 @@
       "generator": "Unix Makefiles",
       "configurationType" : "Debug",
       "buildRoot":  "${projectDir}/build/${name}",
-      "cmakeCommandArgs": "",
+      "cmakeCommandArgs": "-DCMAKE_BUILD_TYPE=Debug",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
       "variables": [{
@@ -18,7 +18,7 @@
       "generator": "Unix Makefiles",
       "configurationType" : "Release",
       "buildRoot": "${projectDir}/build/${name}",
-      "cmakeCommandArgs": "",
+      "cmakeCommandArgs": "-DCMAKE_BUILD_TYPE=Release",
       "buildCommandArgs": "",
       "ctestCommandArgs": ""
     }

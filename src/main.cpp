@@ -66,6 +66,10 @@ std::string Normalize(std::string s){
     return nString;
 }
 
+void print_status(std::string status, std::string buffer){
+  std::cout << status << buffer << "%" << '\n';
+}
+
 int main(int argc, const char *argv[]) {
   std::string line;
   long count;
@@ -159,14 +163,20 @@ int main(int argc, const char *argv[]) {
   int buffer = 0;
   int localbuffer;
 
+  // Create thread pool
+  std::vector<std::thread> Workers;
+
+  auto start = std::chrono::high_resolution_clock::now();
+
   // Iterate through dict file from top to bottom
-  for (long i = 0; std::getline(inputFile, line) && i < 100000; ++i){
+  for (long i = 0; std::getline(inputFile, line); ++i){
+  // for (long i = 0; std::getline(inputFile, line) && i < 10000; ++i){
     count--;
 
     localbuffer = 100 - (count * 100/length);
 
     if (localbuffer > buffer){
-      std::cout << status << std::to_string(buffer) << "%" << '\n';
+      Workers.push_back(std::thread(print_status, status, std::to_string(buffer)));
       buffer = localbuffer;
     }
 
@@ -200,7 +210,19 @@ int main(int argc, const char *argv[]) {
         }
       }
     } while (iss);
+
+    // Join threads
+    // wait for threads to finnish or kill threads
+    for (std::thread & th : Workers){
+		// If thread Object is Joinable then Join that thread.
+		  if (th.joinable())
+			   th.join();
+    }
   }
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
+    std::cout << duration << '\n';
 
   std::cout << status << "100%" << '\n';
   // Sort word vector

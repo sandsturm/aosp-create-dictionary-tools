@@ -1,3 +1,9 @@
+# only for cmake --version >= 3.5.1
+cmake_minimum_required(VERSION 3.5.1)
+
+# project name
+project(create-dictionary-cmake)
+
 set (CMAKE_C_COMPILER             "/usr/bin/clang")
 set (CMAKE_C_FLAGS                "-Wall -std=c99")
 set (CMAKE_C_FLAGS_DEBUG          "-g")
@@ -18,13 +24,7 @@ set (CMAKE_NM      "/usr/bin/llvm-nm")
 set (CMAKE_OBJDUMP "/usr/bin/llvm-objdump")
 set (CMAKE_RANLIB  "/usr/bin/llvm-ranlib")
 
-SET (LLVM_ENABLE_THREADS "yes")
-
-# only for cmake --version >= 3.5.1
-cmake_minimum_required(VERSION 3.5.1)
-
-# project name
-project(create-dictionary-cmake)
+set (LLVM_ENABLE_THREADS "yes")
 
 # Enable threads
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
