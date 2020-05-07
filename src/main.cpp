@@ -3,8 +3,8 @@
 #include <chrono>
 #include <vector>
 
-#include "wordcount.h"
 #include "spellcheck.h"
+#include "wordcount.h"
 
 inline bool isInteger(const std::string & s)
 {
@@ -71,6 +71,11 @@ void print_status(std::string status, std::string buffer){
 }
 
 int main(int argc, const char *argv[]) {
+  // Create the containers
+  std::set<std::string> spellcheck;
+  std::vector<WordCount> words;
+  std::map<std::string, WordCount> android_dictionary;
+
   std::string line;
   long count;
 
@@ -80,7 +85,6 @@ int main(int argc, const char *argv[]) {
     exit(0);
   }
 
-
   // Open the dictionary file to read data
   std::ifstream inputFile(argv[1]);
 
@@ -89,9 +93,6 @@ int main(int argc, const char *argv[]) {
     std::cout << "File not found. Please provide a correct path and filename." << '\n';
     exit(0);
   }
-
-  // Create an array for spellcheck
-  std::set<std::string> spellcheck;
 
   // Read spellcheck file
   std::ifstream spellcheckFile("demodata/German_de_DE.dic");
@@ -118,7 +119,7 @@ int main(int argc, const char *argv[]) {
   std::cout << "Spellcheck file loaded." << '\n';
   spellcheckFile.close();
 
-  std::string status = "Lines read:  ";
+  std::string status = "Lines read: ";
 
   // Count every line of the file
   for (count = 0; std::getline(inputFile, line); ++count){
@@ -151,9 +152,6 @@ int main(int argc, const char *argv[]) {
   // Variables for storing data from file
   std::string dictWord;
   std::string dictCount;
-
-  // Vector of words
-  std::vector<WordCount> words;
 
   // Store file length
   long length = count;
@@ -220,24 +218,91 @@ int main(int argc, const char *argv[]) {
     }
   }
 
-    auto stop = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-    std::cout << duration << '\n';
+  auto stop = std::chrono::high_resolution_clock::now();
+  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
+  std::cout << duration << '\n';
 
   std::cout << status << "100%" << '\n';
-  // Sort word vector
-  sort(words.begin(), words.end(),CompareWordCount);
 
   // Calculate the divider to ensure results between 50 and 254
   // int divider = int (count / 205) + 1;
   int divider = int(words.size() / 205) + 1;
 
-  // Export vector to restult file
+  // Add frequency and dont touch devider for Words from Google dictionary
   for (long i = 0; i < long(words.size()); ++i){
     int frequency = ((words.size() - i) / divider) + 50;
+  }
+
+  // Read spellcheck file
+  std::ifstream wordtypeFile("demodata/de_wordlist.combined");
+
+  // Iterate through original dictionary file to capture abbreviations and offensive flag
+  for (long i = 0; std::getline(wordtypeFile, line); ++i){
+    std::cout << "Line: " << i << '\n';
+
+    std::istringstream iss(line);
+    std::string delimiter = ",";
+
+    do{
+      std::string subs;
+      iss >> subs;
+
+      unsigned first = subs.find("word=");
+      unsigned last = subs.find(",");
+
+      if (first < subs.length()){
+
+        std::string word = subs.substr(first + 5, last - first + 5);
+
+        first = subs.find("f=");
+        last = subs.find(",", first);
+
+        if (first < subs.length()){
+
+          unsigned int freq = std::stoi(subs.substr(first + 2, last- first + 2));
+          unsigned int orgFreq = freq;
+
+          first = subs.find("flags=");
+          last = subs.find(",", first);
+
+          if (first < subs.length()){
+            std::string flags = subs.substr (first + 6, last - first + 6);
+
+            int offensive = subs.find("possibly_offensive=true");
+
+            if ((flags.length() > 0) || (offensive > 0)){
+              if (findWord(word, words) == true){
+                continue;
+              } else {
+                WordCount tempO(word, freq, flags, orgFreq, (offensive > 0));
+                words.push_back(tempO);
+              }
+            }
+          }
+        }
+      }
+    } while (iss);
+  }
+
+  // Close spellcheckFile since everthing is in the spellcheck vector
+  std::cout << "Vector size: " << words.size() << '\n';
+  std::cout << "Android dictionary file (abbreviations and offensive word) loaded." << '\n';
+  wordtypeFile.close();
+
+  // Sort word vector
+  sort(words.begin(), words.end(),CompareWordCount);
+
+  // Export vector to restult file
+  for (long i = 0; i < long(words.size()) || i < 1000; ++i){
+
+    std::string flag_offensive = "";
+
+    if (words[i].offensive){
+      flag_offensive = ",possibly_offensive=true";
+    }
 
     // Format: word=der,f=216,flags=,originalFreq=216
-    outputFile << " word=" << words[i].word << ",f=" << frequency << ",flags=,originalFreq=" << frequency << '\n';
+    outputFile << " word=" << words[i].word << ",f=" << words[i].freq << ",flags=" << words[i].flags << ",originalFreq=" << words[i].freq << flag_offensive << '\n';
   }
 
   std::cout << "Sorted words." << '\n';
