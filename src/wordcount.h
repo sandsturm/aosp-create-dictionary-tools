@@ -45,4 +45,19 @@ struct {
   }
 } CompareWordCount;
 
+struct {
+  bool operator()(const WordCount& a, const WordCount& b){
+    if (a.freq < b.freq)
+        return false;
+    else if (a.freq > b.freq)
+        return true;
+    else{
+        if (a.word < b.word)
+            return true;
+        else
+            return false;
+    }
+  }
+} CompareFrequency;
+
 #endif // WORDCOUNT_H ///:~
