@@ -1,63 +1,32 @@
 #ifndef WORDCOUNT_H
 #define WORDCOUNT_H
+#pragma once
 
-struct WordCount {
-  std::string word;    // Word
-  unsigned int count;      // Occurence #
-  unsigned int freq;
-  unsigned int orgFreq;
-  std::string flags;
-  bool offensive;
+#include <set>
+#include <string>
+#include <vector>
 
-  void iCount(){
-    count++;
-  }
+#include "struct.words.h"
 
-  WordCount(std::string s){
-    word = s;
-    count = 1;
-    flags = "";
-    offensive = false;
-  }
+class Wordcount{
+  private:
+    std::vector<structWordcount> wordcount;
 
-  WordCount(std::string s, unsigned int fr, std::string fl, unsigned int org, bool o){
-    word = s;
-    count = 1;
-    freq = fr;
-    flags = fl;
-    orgFreq = org;
-    offensive = o;
-  }
+  public:
+    Wordcount();
+    ~Wordcount();
+
+    Wordcount(std::string s);
+    Wordcount(std::string s, unsigned int fr, std::string fl, unsigned int org, bool o);
+    void addWord(std::string s);
+    void addWordcount(std::string s, unsigned int fr, std::string fl, unsigned int org, bool o);
+    void updateWord(long i, unsigned int fr, std::string fl, unsigned int org, bool o);
+    void addFrequency();
+    void iCount();
+    bool findWord(std::string s);
+    long rowWord(std::string s);
+    void exportFile();
+    void sort();
 };
-
-struct {
-  bool operator()(const WordCount& a, const WordCount& b){
-    if (a.count < b.count)
-        return false;
-    else if (a.count > b.count)
-        return true;
-    else{
-        if (a.word < b.word)
-            return true;
-        else
-            return false;
-    }
-  }
-} CompareWordCount;
-
-struct {
-  bool operator()(const WordCount& a, const WordCount& b){
-    if (a.freq < b.freq)
-        return false;
-    else if (a.freq > b.freq)
-        return true;
-    else{
-        if (a.word < b.word)
-            return true;
-        else
-            return false;
-    }
-  }
-} CompareFrequency;
 
 #endif // WORDCOUNT_H ///:~

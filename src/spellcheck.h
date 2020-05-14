@@ -1,12 +1,30 @@
 #ifndef SPELLCHECK_H
 #define SPELLCHECK_H
+#pragma once
 
-struct Spellcheck {
-  std::string word;
+#include <fstream>
+#include <string>
+#include <set>
 
-  Spellcheck(std::string s){
-    word = s;
-  }
+class Spellcheck{
+  private:
+    // Set with words for spellchecking input file
+    std::set<std::string> spellcheck;
+
+    // Set with words which are in the input file but are missing in the spellcheck file
+    std::set<std::string> missingSpellcheck;
+
+  public:
+    Spellcheck();
+    ~Spellcheck();
+
+    Spellcheck(std::string s);
+
+    void exportFile();
+    bool find(std::string s);
+    void insert(std::string s);
+    void load_spellcheckfile(std::set<std::string> &spellcheck);
+    void missing(std::string s);
 };
 
 #endif // SPELLCHECK_H ///:~
