@@ -61,7 +61,7 @@ int main(int argc, const char *argv[]) {
 
   // Exit if no filename provided
   if (!argv[1]){
-    std::cout << "Please provide a correct path and filename." << '\n';
+    std::cout << "Please provide a correct path and filename." << '\n' << std::flush;
     exit(0);
   }
 
@@ -70,19 +70,19 @@ int main(int argc, const char *argv[]) {
 
   // Exit if filename is wrong
   if (!m_InputFile){
-    std::cout << "File not found. Please provide a correct path and filename." << '\n';
+    std::cout << "File not found. Please provide a correct path and filename." << '\n' << std::flush;
     exit(0);
   }
 
   m_Spellcheck.open();
-  m_AndroidDictionary.open();
+  m_Dictionary.loadAndroid();
 
   // Count every line of the file
   for (count = 0; std::getline(m_InputFile, line); ++count){
     std::cout << status << count << '\r' << std::flush;
   }
 
-  std::cout << status << count << '\n';
+  std::cout << status << count << '\n'  << std::flush;
 
   // Return to the beginning of the input file
   m_InputFile.clear();
@@ -166,15 +166,11 @@ int main(int argc, const char *argv[]) {
     // }
   }
 
-  std::cout << status << "100%" << '\n';
+  std::cout << status << "100%" << '\n' << std::flush;
 
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-  std::cout << "Duration: " << duration << '\n';
-
-  m_AndroidDictionary.add_words(&m_Dictionary);
-
-  std::cout << "Android dictionary file aligned with dictionary." << '\n';
+  std::cout << "Duration: " << duration << '\n' << std::flush;
 
   m_Dictionary.sort();
   m_Dictionary.exportFile();
@@ -183,5 +179,6 @@ int main(int argc, const char *argv[]) {
   // Close files
   m_InputFile.close();
 
-  std::cout << "Completed. Wrote output." << '\n';
+  std::cout << "Wrote output." << '\n' << std::flush;
+  std::cout << "Completed." << '\n' << std::flush;
 }

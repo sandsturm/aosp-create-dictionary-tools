@@ -14,72 +14,7 @@ Android_Dictionary::~Android_Dictionary(){
 }
 
 void Android_Dictionary::open(){
-  // Read Android dictionary file
-  std::ifstream file("demodata/de_wordlist.combined");
-  std::string line;
-
-  // Iterate through Android dictionary file to capture abbreviations and offensive flag
-  for (long i = 0; std::getline(file, line); ++i){
-    std::istringstream iss(line);
-    std::string delimiter = ",";
-
-    do{
-      std::string subs;
-      iss >> subs;
-
-      unsigned first = subs.find("word=");
-      unsigned last = subs.find(",");
-
-      if (first < subs.length()){
-
-        std::string word = subs.substr(first + 5, last - first - 5);
-
-        first = subs.find("f=");
-        last = subs.find(",", first);
-
-        if (first < subs.length()){
-
-          unsigned int freq = std::stoi(subs.substr(first + 2, last - first - 2));
-          first = subs.find("originalFreq=");
-          last = subs.find(",", first);
-
-          if (first < subs.length()){
-
-            unsigned int originalFreq = std::stoi(subs.substr(first + 13, last - first - 13));
-
-            first = subs.find("flags=");
-            last = subs.find(",", first);
-
-            if (first < subs.length()){
-              std::string flags = subs.substr (first + 6, last - first - 6);
-
-              bool offensive = false;
-
-              if (subs.find("possibly_offensive=true") < subs.length()){
-                offensive = true;
-              }
-
-              structWord tempO;
-
-              tempO.word = word;
-              tempO.count = 1;
-              tempO.freq = freq;
-              tempO.flags = flags;
-              tempO.orgFreq = originalFreq;
-              tempO.offensive = offensive;
-
-              dictionary[word].push_back(tempO);
-            }
-          }
-        }
-      }
-    } while (iss);
-  }
-
-  // Close Android dictionary file
-  std::cout << "Vector size: " << dictionary.size() << '\n';
-  std::cout << "Android dictionary file (abbreviations and offensive word) loaded." << '\n';
-  file.close();
+  
 }
 
 void Android_Dictionary::add_words(Dictionary *r_Dictionary){

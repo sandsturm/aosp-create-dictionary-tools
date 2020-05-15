@@ -11,7 +11,7 @@ struct structWord {
   unsigned int orgFreq;
   std::string flags;
   bool offensive;
-  bool andriod;
+  bool android;
 
   void iCount(){
     count++;
