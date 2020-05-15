@@ -23,8 +23,8 @@ class Spellcheck{
     void exportFile();
     bool find(std::string s);
     void insert(std::string s);
-    void load_spellcheckfile();
     void missing(std::string s);
+    void open();
 };
 
 #endif // SPELLCHECK_H ///:~

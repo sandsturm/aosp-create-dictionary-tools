@@ -34,10 +34,10 @@ void Dictionary::run(std::string inputFile){
     exit(0);
   }
 
-  m_Spellcheck.load_spellcheckfile();
+  m_Spellcheck.open();
+  m_AndroidDictionary.open();
 
   std::string line;
-
   std::string status = "Lines read: ";
 
   // Count every line of the file
@@ -78,10 +78,11 @@ void Dictionary::run(std::string inputFile){
 
     localbuffer = 100 - (count * 100/length);
 
-    // if (localbuffer > buffer){
-    //   Workers.push_back(std::thread(print_status, status, std::to_string(buffer)));
-    //   buffer = localbuffer;
-    // }
+    if (localbuffer > buffer){
+      // Workers.push_back(std::thread(print_status, status, std::to_string(buffer)));
+      buffer = localbuffer;
+    }
+
     std::cout << status << buffer << "%" << '\r' << std::flush;
 
     std::istringstream iss(line);
@@ -134,7 +135,6 @@ void Dictionary::run(std::string inputFile){
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
   std::cout << "Duration: " << duration << '\n';
 
-  m_AndroidDictionary.open();
   m_AndroidDictionary.add_words(&m_Wordcount);
 
   std::cout << "Android dictionary file aligned with dictionary." << '\n';

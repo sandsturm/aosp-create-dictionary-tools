@@ -22,7 +22,7 @@ void Spellcheck::insert(std::string s){
   spellcheck.insert(s);
 }
 
-void Spellcheck::load_spellcheckfile(){
+void Spellcheck::open(){
   // Open the spellcheck file
   std::ifstream m_SpellcheckFile;
 
