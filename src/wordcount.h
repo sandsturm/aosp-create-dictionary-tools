@@ -6,11 +6,11 @@
 #include <string>
 #include <vector>
 
-#include "struct.words.h"
+#include "struct.word.h"
 
 class Wordcount{
   private:
-    std::vector<structWordcount> wordcount;
+    std::vector<structWord> wordcount;
 
   public:
     Wordcount();

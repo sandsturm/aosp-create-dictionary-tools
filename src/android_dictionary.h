@@ -6,19 +6,19 @@
 #include <string>
 #include <vector>
 
-#include "struct.words.h"
-#include "wordcount.h"
+#include "struct.word.h"
+#include "dictionary.h"
 
 class Android_Dictionary{
   private:
-    std::map<std::string, std::vector<structWordcount>> dictionary;
+    std::map<std::string, std::vector<structWord>> dictionary;
 
   public:
     Android_Dictionary();
     ~Android_Dictionary();
 
     void open();
-    void add_words(Wordcount *r_Wordcount);
+    void add_words(Dictionary *r_Dictionary);
 };
 
 

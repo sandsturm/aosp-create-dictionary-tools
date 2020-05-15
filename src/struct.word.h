@@ -1,16 +1,17 @@
-#ifndef STRUCT_WORDS_H
-#define STRUCT_WORDS_H
+#ifndef STRUCT_WORD_H
+#define STRUCT_WORD_H
 #pragma once
 
 #include <string>
 
-struct structWordcount {
+struct structWord {
   std::string word;    // Word
   unsigned int count;      // Occurence #
   unsigned int freq;
   unsigned int orgFreq;
   std::string flags;
   bool offensive;
+  bool andriod;
 
   void iCount(){
     count++;
@@ -19,7 +20,7 @@ struct structWordcount {
 
 
 struct {
-  bool operator()(const structWordcount& a, const structWordcount& b){
+  bool operator()(const structWord& a, const structWord& b){
     if (a.count < b.count)
         return false;
     else if (a.count > b.count)
@@ -34,7 +35,7 @@ struct {
 } CompareWordcount;
 
 struct {
-  bool operator()(const structWordcount& a, const structWordcount& b){
+  bool operator()(const structWord& a, const structWord& b){
     if (a.freq < b.freq)
         return false;
     else if (a.freq > b.freq)
@@ -48,4 +49,4 @@ struct {
   }
 } CompareFrequency;
 
-#endif // STRUCT_WORDS_H ///:~
+#endif // STRUCT_WORD_H ///:~

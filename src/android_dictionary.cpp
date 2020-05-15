@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "android_dictionary.h"
-#include "wordcount.h"
+#include "dictionary.h"
 
 Android_Dictionary::Android_Dictionary(){
 }
@@ -59,7 +59,7 @@ void Android_Dictionary::open(){
                 offensive = true;
               }
 
-              structWordcount tempO;
+              structWord tempO;
 
               tempO.word = word;
               tempO.count = 1;
@@ -82,17 +82,17 @@ void Android_Dictionary::open(){
   file.close();
 }
 
-void Android_Dictionary::add_words(Wordcount *r_Wordcount){
+void Android_Dictionary::add_words(Dictionary *r_Dictionary){
   // Add information from android_dictionary to word vector
-  for (std::map<std::string, std::vector<structWordcount>>::iterator it=dictionary.begin(); it!=dictionary.end(); ++it){
-    long row = r_Wordcount->rowWord(it->second[0].word);
+  for (std::map<std::string, std::vector<structWord>>::iterator it=dictionary.begin(); it!=dictionary.end(); ++it){
+    long row = r_Dictionary->rowWord(it->second[0].word);
     if (row >= 0){
       // std::cout << it->second[0].word << ":" << words[row].word << '\n';
       // Update flags and frequency of existing words
-      r_Wordcount->updateWord(row, it->second[0].freq, it->second[0].flags, it->second[0].orgFreq, it->second[0].offensive);
+      r_Dictionary->updateWord(row, it->second[0].freq, it->second[0].flags, it->second[0].orgFreq, it->second[0].offensive);
     } else {
       // Add missing words of Android dictionary to the words vector
-      r_Wordcount->addWordcount(it->second[0].word, it->second[0].freq, it->second[0].flags, it->second[0].orgFreq, it->second[0].offensive);
+      r_Dictionary->addWord(it->second[0].word, it->second[0].freq, it->second[0].flags, it->second[0].orgFreq, it->second[0].offensive);
     }
   }
 }
