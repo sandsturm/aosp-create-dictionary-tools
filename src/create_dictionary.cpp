@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <sstream>
 
-#include "dictionary.h"
+#include "create_dictionary.h"
 #include "spellcheck.h"
 #include "wordcount.h"
 #include "threads.h"
@@ -34,33 +34,9 @@ void Dictionary::run(std::string inputFile){
     exit(0);
   }
 
+  m_Spellcheck.load_spellcheckfile();
+
   std::string line;
-
-  // Read m_Spellcheck file
-  std::ifstream m_SpellcheckFile("demodata/German_de_DE.dic");
-
-  // Iterate through m_Spellcheck file
-  for (long i = 0; std::getline(m_SpellcheckFile, line); ++i){
-    std::istringstream iss(line);
-    std::string delimiter = "/";
-
-    do{
-      std::string subs;
-      iss >> subs;
-      // TODO Check token!
-      // Check if the / delimiter is in the line.
-      // There are some lines without delimiter.
-      std::string token = subs.substr(0, subs.find(delimiter));
-      if (token.length() > 0){
-        subs = token;
-      }
-      m_Spellcheck.insert(subs);
-    } while (iss);
-  }
-
-  // Close m_SpellcheckFile since everthing is in the m_Spellcheck vector
-  std::cout << "Spellcheck file loaded." << '\n';
-  m_SpellcheckFile.close();
 
   std::string status = "Lines read: ";
 
@@ -96,8 +72,8 @@ void Dictionary::run(std::string inputFile){
   auto start = std::chrono::high_resolution_clock::now();
 
   // Iterate through dict file from top to bottom
-  for (long i = 0; std::getline(m_InputFile, line); ++i){
-  // for (long i = 0; std::getline(m_InputFile, line) && i < 10000; ++i){
+  // for (long i = 0; std::getline(m_InputFile, line); ++i){
+  for (long i = 0; std::getline(m_InputFile, line) && i < 10000; ++i){
     count--;
 
     localbuffer = 100 - (count * 100/length);
@@ -158,12 +134,14 @@ void Dictionary::run(std::string inputFile){
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
   std::cout << "Duration: " << duration << '\n';
 
+  m_AndroidDictionary.open();
   m_AndroidDictionary.add_words(&m_Wordcount);
 
   std::cout << "Android dictionary file aligned with dictionary." << '\n';
 
   m_Wordcount.sort();
   m_Wordcount.exportFile();
+  m_Spellcheck.exportFile();
 
   // Close files
   m_InputFile.close();

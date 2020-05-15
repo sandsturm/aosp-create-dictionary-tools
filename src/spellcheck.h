@@ -23,7 +23,7 @@ class Spellcheck{
     void exportFile();
     bool find(std::string s);
     void insert(std::string s);
-    void load_spellcheckfile(std::set<std::string> &spellcheck);
+    void load_spellcheckfile();
     void missing(std::string s);
 };
 

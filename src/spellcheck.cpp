@@ -22,14 +22,14 @@ void Spellcheck::insert(std::string s){
   spellcheck.insert(s);
 }
 
-void Spellcheck::load_spellcheckfile(std::set<std::string> &spellcheck){
-  // Files
+void Spellcheck::load_spellcheckfile(){
+  // Open the spellcheck file
   std::ifstream m_SpellcheckFile;
-
-  std::string line;
 
   // Read spellcheck file
   m_SpellcheckFile.open("demodata/German_de_DE.dic");
+
+  std::string line;
 
   // Iterate through spellcheck file
   for (long i = 0; std::getline(m_SpellcheckFile, line); ++i){
@@ -59,15 +59,14 @@ void Spellcheck::missing(std::string s){
   missingSpellcheck.insert(s);
 }
 
-void exportFile(){
+void Spellcheck::exportFile(){
   // Export missing m_Spellcheck
   // Open file to write missing m_Spellcheck
-  std::ofstream missesFile("demodata/missing_m_Spellcheck.txt");
+  std::ofstream missesFile("demodata/missing_spellcheck.txt");
 
-  // for(auto f : missingSpellcheck){
-  //   missesFile << f << '\n';
-  // }
-  asm("int $3");
+  for(auto f : missingSpellcheck){
+    missesFile << f << '\n';
+  }
 
   missesFile.close();
 }

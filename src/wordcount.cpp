@@ -39,7 +39,12 @@ Wordcount::Wordcount(std::string s, unsigned int fr, std::string fl, unsigned in
 
 void Wordcount::addWord(std::string s){
   if (findWord(s) != true){
-    Wordcount(s);
+    structWordcount tempO;
+
+    tempO.word = s;
+    tempO.count = 1;
+
+    wordcount.push_back(tempO); // Push structure object into words vector
   }
 }
 
