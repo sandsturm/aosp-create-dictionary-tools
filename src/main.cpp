@@ -2,7 +2,6 @@
 #include <iostream>
 #include <sstream>
 
-#include "android_dictionary.h"
 #include "spellcheck.h"
 #include "dictionary.h"
 #include "threads.h"
@@ -55,7 +54,6 @@ int main(int argc, const char *argv[]) {
   long count;
 
   // Initiate objects
-  Android_Dictionary m_AndroidDictionary;
   Spellcheck m_Spellcheck;
   Dictionary m_Dictionary;
 
@@ -140,8 +138,8 @@ int main(int argc, const char *argv[]) {
         bool found = false;
 
         // Check if normalized word is in the m_Spellcheck and add it
-        if (m_Spellcheck.find(word)){ // If word with capital letter cannot be found
-          if (!m_Spellcheck.find(Normalize(word))){ // but can be found with lower case letter, take this one
+        if (!m_Spellcheck.find(word)){ // If word with capital letter cannot be found
+          if (m_Spellcheck.find(Normalize(word))){ // but can be found with lower case letter, take this one
             word = Normalize(word);
             found = true;
           }
@@ -172,7 +170,9 @@ int main(int argc, const char *argv[]) {
   auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
   std::cout << "Duration: " << duration << '\n' << std::flush;
 
-  m_Dictionary.sort();
+  m_Dictionary.sortCount();
+  m_Dictionary.addFrequency();
+  m_Dictionary.sortFrequency();
   m_Dictionary.exportFile();
   m_Spellcheck.exportFile();
 

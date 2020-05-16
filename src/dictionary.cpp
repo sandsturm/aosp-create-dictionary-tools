@@ -34,6 +34,7 @@ Dictionary::Dictionary(std::string s, unsigned int fr, std::string fl, unsigned 
   tempO.flags = fl;
   tempO.orgFreq = org;
   tempO.offensive = o;
+  tempO.android = 0;
 
   dictionary.push_back(tempO); // Push structure object into words vector
 }
@@ -44,30 +45,10 @@ void Dictionary::addWord(std::string s){
 
     tempO.word = s;
     tempO.count = 1;
+    tempO.android = 0;
 
     dictionary.push_back(tempO); // Push structure object into words vector
   }
-}
-
-void Dictionary::addWord(std::string s, unsigned int fr, std::string fl, unsigned int org, bool o){
-  structWord tempO;
-
-  tempO.word = s;
-  tempO.count = 1;
-  tempO.freq = fr;
-  tempO.flags = fl;
-  tempO.orgFreq = org;
-  tempO.offensive = o;
-
-  dictionary.push_back(tempO); // Push structure object into words vector
-}
-
-void Dictionary::updateWord(long i, unsigned int fr, std::string fl, unsigned int org, bool o){
-  dictionary[i].count = 1;
-  dictionary[i].freq = fr;
-  dictionary[i].flags = fl;
-  dictionary[i].orgFreq = org;
-  dictionary[i].offensive = o;
 }
 
 void Dictionary::addFrequency(){
@@ -77,9 +58,11 @@ void Dictionary::addFrequency(){
 
   // Add frequency and dont touch devider for Dictionary from Google dictionary
   for (long i = 0; i < long(dictionary.size()); ++i){
-    int frequency = ((dictionary.size() - i) / divider);
-    dictionary[i].freq = frequency;
-    dictionary[i].orgFreq = frequency;
+    if (dictionary[i].android == 0){
+      int frequency = ((dictionary.size() - i) / divider);
+      dictionary[i].freq = frequency;
+      dictionary[i].orgFreq = frequency;
+    }
   }
 }
 
@@ -173,7 +156,7 @@ void Dictionary::loadAndroid(){
               tempO.flags = flags;
               tempO.orgFreq = originalFreq;
               tempO.offensive = offensive;
-              tempO.android = true;
+              tempO.android = 1;
 
               dictionary.push_back(tempO);
             }
@@ -189,10 +172,16 @@ void Dictionary::loadAndroid(){
   file.close();
 }
 
-void Dictionary::sort(){
+void Dictionary::sortCount(){
+  // Sort word vector
+  std::sort(dictionary.begin(), dictionary.end(), CompareWordcount);
+  std::cout << "Sorted words by count." << '\n';
+}
+
+void Dictionary::sortFrequency(){
   // Sort word vector
   std::sort(dictionary.begin(), dictionary.end(), CompareFrequency);
-  std::cout << "Sorted words." << '\n';
+  std::cout << "Sorted words by frequency." << '\n';
 }
 
 /*********************************************
