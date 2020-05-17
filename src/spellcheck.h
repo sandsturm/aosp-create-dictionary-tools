@@ -24,7 +24,7 @@ class Spellcheck{
     bool find(std::string s);
     void insert(std::string s);
     void missing(std::string s);
-    void open();
+    void open(std::string s);
 };
 
 #endif // SPELLCHECK_H ///:~

@@ -54,7 +54,7 @@ void Dictionary::addWord(std::string s){
 void Dictionary::addFrequency(){
   // Calculate the divider to ensure results between 50 and 254
   // int divider = int (count / 205) + 1;
-  int divider = int(dictionary.size() / 90) + 10;
+  int divider = int(dictionary.size() / DIVIDER) + BASEFREQ;
 
   // Add frequency and dont touch devider for Dictionary from Google dictionary
   for (long i = 0; i < long(dictionary.size()); ++i){

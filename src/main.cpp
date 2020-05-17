@@ -72,7 +72,8 @@ int main(int argc, const char *argv[]) {
     exit(0);
   }
 
-  m_Spellcheck.open();
+  m_Spellcheck.open("demodata/German_de_DE.dic");
+  m_Spellcheck.open("demodata/own_spellcheck.txt");
   m_Dictionary.loadAndroid();
 
   // Count every line of the file
@@ -107,8 +108,8 @@ int main(int argc, const char *argv[]) {
   auto start = std::chrono::high_resolution_clock::now();
 
   // Iterate through dict file from top to bottom
-  // for (long i = 0; std::getline(m_InputFile, line); ++i){
-  for (long i = 0; std::getline(m_InputFile, line) && i < 10000; ++i){
+  for (long i = 0; std::getline(m_InputFile, line); ++i){
+  // for (long i = 0; std::getline(m_InputFile, line) && i < 10000; ++i){
     count--;
 
     localbuffer = 100 - (count * 100/length);

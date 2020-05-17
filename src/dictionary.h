@@ -10,7 +10,8 @@
 
 class Dictionary{
   private:
-    const int DIVIDER = 90;
+    const unsigned int DIVIDER = 90;
+    const unsigned int BASEFREQ = 1;
 
     std::vector<structWord> dictionary;
 

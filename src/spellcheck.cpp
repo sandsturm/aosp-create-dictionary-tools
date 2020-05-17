@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -22,12 +23,12 @@ void Spellcheck::insert(std::string s){
   spellcheck.insert(s);
 }
 
-void Spellcheck::open(){
+void Spellcheck::open(std::string s){
   // Open the spellcheck file
   std::ifstream m_SpellcheckFile;
 
   // Read spellcheck file
-  m_SpellcheckFile.open("demodata/German_de_DE.dic");
+  m_SpellcheckFile.open(s);
 
   std::string line;
 
@@ -62,7 +63,7 @@ void Spellcheck::missing(std::string s){
 void Spellcheck::exportFile(){
   // Export missing m_Spellcheck
   // Open file to write missing m_Spellcheck
-  std::ofstream missesFile("demodata/missing_spellcheck.txt");
+  std::ofstream missesFile("demodata/missing_in_spellcheck.txt");
 
   for(auto f : missingSpellcheck){
     missesFile << f << '\n';
