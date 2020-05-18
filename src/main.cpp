@@ -45,6 +45,23 @@ std::string Normalize(std::string s){
 
 
 int main(int argc, const char *argv[]) {
+
+  std::vector<std::string> cmdLineArgs(argv, argv+argc);
+
+  // Process command line arguments
+  for(auto& arg : cmdLineArgs){
+    if(arg == "--help" || arg == "-help"){
+      std::cout << "usage: create-dictionary [options] input_file" << '\n' << std::flush;
+      std::cout << "  options:" << '\n' << std::flush;
+      std::cout << "    -s        spellcheck_file of same locale" << '\n' << std::flush;
+      std::cout << "    -a        android_dictionary_file of same locale" << '\n' << std::flush;
+      std::cout << '\n' << std::flush;
+      exit(0);
+    } else if(arg == "whatever"){
+
+    }
+  }
+
   // Files
   std::ifstream m_InputFile;
 
