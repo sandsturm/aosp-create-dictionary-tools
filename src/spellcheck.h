@@ -3,6 +3,7 @@
 #pragma once
 
 #include <fstream>
+#include <map>
 #include <string>
 #include <set>
 
@@ -12,10 +13,13 @@ class Spellcheck{
     std::set<std::string> spellcheck;
 
     // Set with words which are in the input file but are missing in the spellcheck file
-    std::set<std::string> missingSpellcheck;
+    std::map<std::string, unsigned int> missingSpellcheck;
+
+    // Minimum number of hits to export to missing spellcheck file
+    unsigned int min_wordcount;
 
   public:
-    Spellcheck();
+    Spellcheck(unsigned int min);
     ~Spellcheck();
 
     Spellcheck(std::string s);

@@ -2,8 +2,9 @@
 #include <iostream>
 #include <sstream>
 
-#include "spellcheck.h"
+#include "configuration.h"
 #include "dictionary.h"
+#include "spellcheck.h"
 #include "threads.h"
 
 inline bool isInteger(const std::string & s)
@@ -46,6 +47,15 @@ std::string Normalize(std::string s){
 
 int main(int argc, const char *argv[]) {
 
+  // Files
+  std::ifstream m_InputFile;
+
+  // Variables
+  std::string line;
+  std::string status = "Lines read: ";
+  long count;
+
+  // Containers
   std::vector<std::string> cmdLineArgs(argv, argv+argc);
 
   // Process command line arguments
@@ -62,29 +72,22 @@ int main(int argc, const char *argv[]) {
     }
   }
 
-  // Files
-  std::ifstream m_InputFile;
-
-  // Variables
-  std::string line;
-  std::string status = "Lines read: ";
-  long count;
-
-  // Initiate objects
-  Spellcheck m_Spellcheck;
-  Dictionary m_Dictionary;
-
   // Exit if no filename provided
   if (!argv[1]){
     std::cout << "Please provide a correct path and filename." << '\n' << std::flush;
     exit(0);
   }
 
+  // Initiate objects
+  Configuration m_Configuration;
+  Spellcheck m_Spellcheck(m_Configuration.value("minimum_missing_spellcheck"));
+  Dictionary m_Dictionary;
+
   // Open the dictionary file to read data
   m_InputFile.open(argv[1]);
 
   // Exit if filename is wrong
-  if (!m_InputFile){
+  if(!m_InputFile){
     std::cout << "File not found. Please provide a correct path and filename." << '\n' << std::flush;
     exit(0);
   }

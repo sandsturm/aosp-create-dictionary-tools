@@ -5,7 +5,8 @@
 
 #import "spellcheck.h"
 
-Spellcheck::Spellcheck(){
+Spellcheck::Spellcheck(unsigned int min){
+  min_wordcount = min;
 }
 
 Spellcheck::~Spellcheck(){
@@ -57,7 +58,14 @@ void Spellcheck::open(std::string s){
 }
 
 void Spellcheck::missing(std::string s){
-  missingSpellcheck.insert(s);
+  std::map<std::string, unsigned int>::iterator it;
+
+  it = missingSpellcheck.find(s);
+  if(it != missingSpellcheck.end()){
+    missingSpellcheck[s] = it->second + 1;
+  } else {
+    missingSpellcheck[s] = 1;
+  }
 }
 
 void Spellcheck::exportFile(){
@@ -65,8 +73,12 @@ void Spellcheck::exportFile(){
   // Open file to write missing m_Spellcheck
   std::ofstream missesFile("demodata/missing_in_spellcheck.txt");
 
-  for(auto f : missingSpellcheck){
-    missesFile << f << '\n';
+  std::map<std::string, unsigned int>::iterator it;
+
+  for(it = missingSpellcheck.begin(); it != missingSpellcheck.end(); it++){
+    if(it->second > min_wordcount){
+      missesFile << it->first << '\n';
+    }
   }
 
   missesFile.close();

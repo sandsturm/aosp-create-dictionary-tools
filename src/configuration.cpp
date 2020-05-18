@@ -1,0 +1,39 @@
+#include <sstream>
+#include <string>
+
+#include "configuration.h"
+
+Configuration::Configuration(){
+  const char configdata[] = "minimum_missing_spellcheck=250\n"
+  "filename_missing_spellcheck=missing_spellcheck.txt";
+
+  std::istringstream is_file(configdata);
+
+  std::string line;
+
+  while( std::getline(is_file, line) ){
+    std::istringstream is_line(line);
+    std::string key;
+    if( std::getline(is_line, key, '=') ){
+      std::string value;
+      if( std::getline(is_line, value) ){
+        configuration[key] = value;
+      }
+    }
+  }
+}
+
+Configuration::~Configuration(){
+
+}
+
+std::string Configuration::value(std::string s){
+  std::map<std::string, std::string>::iterator it;
+
+  it = configuration.find(s);
+
+  if(it != configuration.end()){
+    return it->second;
+  }
+  return 0;
+}
