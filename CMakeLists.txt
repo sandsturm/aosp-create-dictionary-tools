@@ -30,6 +30,10 @@ set (LLVM_ENABLE_THREADS "yes")
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads)
 
+# Enable unicode
+find_package(ICU COMPONENTS io i18n uc REQUIRED)
+include_directories(${ICU_INCLUDE_DIRS})
+
 # creates the variable EXEC and sets it to hello
 set(EXEC create-dictionary)
 
@@ -44,4 +48,4 @@ file(GLOB SOURCES src/*.cpp)
 
 # compiles the files defined by SOURCES to generante the executable defined by EXEC
 add_executable(${EXEC} ${SOURCES})
-target_link_libraries(${EXEC} ${CMAKE_THREAD_LIBS_INIT})
+target_link_libraries(${EXEC} ${CMAKE_THREAD_LIBS_INIT} ${ICU_LIBRARIES})

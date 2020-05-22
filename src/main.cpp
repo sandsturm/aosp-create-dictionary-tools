@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <unicode/unistr.h>
 
 #include "configuration.h"
 #include "dictionary.h"
@@ -30,15 +31,11 @@ Converts string to lowercase and removes punctuation.
 std::string Normalize(std::string s){
     // Initialize variables
     std::string nString;
-    char c;
 
-    // Make all text lowercase
-    for (int i = 0; i < int(s.length()); i++){
-        c = s[i];
-        c = tolower(c);
-        if (isalpha(c) || isblank(c))
-            nString += c;
-    }
+    // Convert std::string to ICU's UnicodeString
+    icu_67::UnicodeString ucs = icu_67::UnicodeString::fromUTF8(icu_67::StringPiece(s.c_str()));
+    ucs.toLower();
+    ucs.toUTF8String(nString);
 
     // Return converted string
     return nString;
@@ -80,7 +77,7 @@ int main(int argc, const char *argv[]) {
 
   // Initiate objects
   Configuration m_Configuration;
-  Spellcheck m_Spellcheck(m_Configuration.value("minimum_missing_spellcheck"));
+  Spellcheck m_Spellcheck(std::stoi(m_Configuration.value("minimum_missing_spellcheck")));
   Dictionary m_Dictionary;
 
   // Open the dictionary file to read data
@@ -92,7 +89,8 @@ int main(int argc, const char *argv[]) {
     exit(0);
   }
 
-  m_Spellcheck.open("demodata/German_de_DE.dic");
+  // m_Spellcheck.open("demodata/German_de_DE.dic");
+  m_Spellcheck.open("demodata/de_DE_frami.dic");
   m_Spellcheck.open("demodata/own_spellcheck.txt");
   m_Dictionary.loadAndroid();
 
