@@ -2,11 +2,12 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <vector>
 
 #import "spellcheck.h"
 
 Spellcheck::Spellcheck(unsigned int min){
-  min_wordcount = min;
+  m_MinWordcount = min;
 }
 
 Spellcheck::~Spellcheck(){
@@ -75,10 +76,26 @@ void Spellcheck::exportFile(){
 
   std::map<std::string, unsigned int>::iterator it;
 
-  for(it = missingSpellcheck.begin(); it != missingSpellcheck.end(); it++){
-    if(it->second > min_wordcount){
-      missesFile << it->first << '\n';
-    }
+  // Copy missing words map contain to vector for easier sorting
+  std::vector<std::pair<std::string, unsigned int>> words;
+  for (it = missingSpellcheck.begin(); it != missingSpellcheck.end(); it++)
+      words.push_back(*it);
+
+  // Sort pairs container
+  sort(words.begin(), words.end(), [=](std::pair<std::string, unsigned int>& a, std::pair<std::string, unsigned int>& b){
+    return a.second > b.second;
+  });
+
+  // Read from configuration file how many missing words should be exported (in percent)
+  unsigned int min_wordcount = words.size() * m_MinWordcount / 100;
+  std::cout << min_wordcount << '\n';
+
+  std::vector<std::pair<std::string, unsigned int>>::iterator iter;
+  unsigned int count = 0;
+  
+  for(iter = words.begin(); (iter != words.end() && count < min_wordcount) ; iter++){
+    count++;
+    missesFile << iter->first << '\n';
   }
 
   missesFile.close();

@@ -16,7 +16,7 @@ class Spellcheck{
     std::map<std::string, unsigned int> missingSpellcheck;
 
     // Minimum number of hits to export to missing spellcheck file
-    unsigned int min_wordcount;
+    unsigned int m_MinWordcount;
 
   public:
     Spellcheck(unsigned int min);

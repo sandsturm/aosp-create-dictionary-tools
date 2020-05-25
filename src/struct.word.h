@@ -18,7 +18,6 @@ struct structWord {
   }
 };
 
-
 struct {
   bool operator()(const structWord& a, const structWord& b){
     if (a.count < b.count)

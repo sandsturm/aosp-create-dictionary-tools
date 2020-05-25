@@ -4,7 +4,10 @@
 #include "configuration.h"
 
 Configuration::Configuration(){
-  const char configdata[] = "minimum_missing_spellcheck=150\n"
+  const char configdata[] = ""
+  // Export the top count of missing words (in percent)
+  "minimum_missing_spellcheck=1\n"
+  // Filename for words not found in spellcheck
   "filename_missing_spellcheck=missing_spellcheck.txt";
 
   std::istringstream is_file(configdata);
