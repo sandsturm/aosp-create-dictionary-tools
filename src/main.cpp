@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <thread>
 #include <unicode/unistr.h>
 
 #include "configuration.h"
@@ -8,8 +9,9 @@
 #include "spellcheck.h"
 #include "threads.h"
 
-inline bool isInteger(const std::string & s)
-{
+static const int num_threads = 4;
+
+inline bool isInteger(const std::string & s){
    if(s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false;
 
    char * p;
@@ -33,7 +35,7 @@ std::string Normalize(std::string s){
     std::string nString;
 
     // Convert std::string to ICU's UnicodeString
-    icu_67::UnicodeString ucs = icu_67::UnicodeString::fromUTF8(icu_67::StringPiece(s.c_str()));
+    icu_68::UnicodeString ucs = icu_68::UnicodeString::fromUTF8(icu_68::StringPiece(s.c_str()));
     ucs.toLower();
     ucs.toUTF8String(nString);
 
@@ -42,7 +44,7 @@ std::string Normalize(std::string s){
 }
 
 
-int main(int argc, const char *argv[]) {
+int main(int argc, const char *argv[]){
 
   // Files
   std::ifstream m_InputFile;
@@ -54,6 +56,9 @@ int main(int argc, const char *argv[]) {
 
   // Containers
   std::vector<std::string> cmdLineArgs(argv, argv+argc);
+
+  // Threads
+  std::thread t[num_threads];
 
   // Process command line arguments
   for(auto& arg : cmdLineArgs){
@@ -89,10 +94,18 @@ int main(int argc, const char *argv[]) {
     exit(0);
   }
 
-  // m_Spellcheck.open("demodata/German_de_DE.dic");
-  m_Spellcheck.open("demodata/de_DE_frami.dic");
-  m_Spellcheck.open("demodata/own_spellcheck.txt");
-  m_Dictionary.loadAndroid();
+  // Load spellcheck files
+  std::thread t1(&Spellcheck::open, &m_Spellcheck, m_Configuration.value("spellcheck_dictionary"));
+  // m_Spellcheck.open(m_Configuration.value("spellcheck_dictionary"));
+  // m_Spellcheck.open(m_Configuration.value("spellcheck_custom"));
+
+  // Load Android dictionary
+  std::thread t2(&Dictionary::loadAndroid, &m_Dictionary);
+
+  //Join the threads with the main thread
+  t1.join();
+  t2.join();
+  m_Spellcheck.open(m_Configuration.value("spellcheck_custom"));
 
   // Count every line of the file
   for (count = 0; std::getline(m_InputFile, line); ++count){
@@ -186,18 +199,21 @@ int main(int argc, const char *argv[]) {
   std::cout << status << "100%" << '\n' << std::flush;
 
   auto stop = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::microseconds>(stop - start).count();
-  std::cout << "Duration: " << duration << '\n' << std::flush;
+  auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start).count();
+  std::cout << "Duration: " << duration << " sec \n" << std::flush;
 
   m_Dictionary.sortCount();
   m_Dictionary.addFrequency();
   m_Dictionary.sortFrequency();
-  m_Dictionary.exportFile();
-  m_Spellcheck.exportFile();
+
+  t1 = std::thread(&Dictionary::exportFile, &m_Dictionary);
+  t2 = std::thread(&Spellcheck::exportFile, &m_Spellcheck);
+
+  t1.join();
+  t2.join();
 
   // Close files
   m_InputFile.close();
 
-  std::cout << "Wrote output." << '\n' << std::flush;
   std::cout << "Completed." << '\n' << std::flush;
 }

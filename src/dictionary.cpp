@@ -99,6 +99,8 @@ void Dictionary::exportFile(){
     outputFile << " word=" << dictionary[i].word << ",f=" << dictionary[i].freq << ",flags=" << dictionary[i].flags << ",originalFreq=" << dictionary[i].freq << offensive << '\n';
   }
 
+  std::cout << "Dictionary file exported." << '\n';
+
   outputFile.close();
 }
 

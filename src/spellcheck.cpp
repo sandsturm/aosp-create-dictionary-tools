@@ -92,11 +92,13 @@ void Spellcheck::exportFile(){
 
   std::vector<std::pair<std::string, unsigned int>>::iterator iter;
   unsigned int count = 0;
-  
+
   for(iter = words.begin(); (iter != words.end() && count < min_wordcount) ; iter++){
     count++;
     missesFile << iter->first << '\n';
   }
+
+  std::cout << "Spellcheck file exported." << '\n';
 
   missesFile.close();
 }
