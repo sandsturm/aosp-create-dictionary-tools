@@ -43,6 +43,34 @@ std::string Normalize(std::string s){
     return nString;
 }
 
+// bool read_sourcefile(std::ifstream m_InputFile, std::vector<std::string> &wordvector){
+//   std::string line;
+//
+//   for (long i = 0; std::getline(m_InputFile, line); ++i){
+//     std::istringstream iss(line);
+//
+//     do{
+//       std::string subs;
+//       iss >> subs;
+//
+//       // Remove punctuation
+//       std::string word;
+//       std::remove_copy_if(subs.begin(), subs.end(),
+//                     std::back_inserter(word), //Store output
+//                     std::ptr_fun<int, int>(&std::ispunct)
+//                    );
+//
+//       // TODO Check why empty word is provided by function
+//       // Exclude empty words and numbers
+//       if (word.length() > 0 && isInteger(word) == false){
+//         wordvector.push_back(word);
+//       }
+//     } while (iss);
+//   }
+//
+//   return true;
+// }
+
 
 int main(int argc, const char *argv[]){
 
@@ -53,6 +81,8 @@ int main(int argc, const char *argv[]){
   std::string line;
   std::string status = "Lines read: ";
   long count;
+
+  std::vector<std::string> wordvector;
 
   // Containers
   std::vector<std::string> cmdLineArgs(argv, argv+argc);
@@ -143,16 +173,17 @@ int main(int argc, const char *argv[]){
   // for (long i = 0; std::getline(m_InputFile, line) && i < 10000; ++i){
     count--;
 
-    localbuffer = 100 - (count * 100/length);
+    localbuffer = 100 - (count * 100 / length);
 
     if (localbuffer > buffer){
       // Workers.push_back(std::thread(print_status, status, std::to_string(buffer)));
       buffer = localbuffer;
     }
 
-    std::cout << status << buffer << "%" << '\r' << std::flush;
+    std::cout << status << buffer << "% / " << count << '\r' << std::flush;
 
     std::istringstream iss(line);
+
     do{
       std::string subs;
       iss >> subs;
@@ -199,8 +230,8 @@ int main(int argc, const char *argv[]){
   std::cout << status << "100%" << '\n' << std::flush;
 
   auto stop = std::chrono::high_resolution_clock::now();
-  auto duration = std::chrono::duration_cast<std::chrono::seconds>(stop - start).count();
-  std::cout << "Duration: " << duration << " sec \n" << std::flush;
+  auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
+  std::cout << "Duration: " << duration << " milliisec \n" << std::flush;
 
   m_Dictionary.sortCount();
   m_Dictionary.addFrequency();

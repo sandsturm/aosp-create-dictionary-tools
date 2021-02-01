@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.5.1)
 project(create-dictionary-cmake)
 
 set (CMAKE_C_COMPILER             "/usr/bin/clang")
-set (CMAKE_C_FLAGS                "-Wall -std=c99")
+set (CMAKE_C_FLAGS                "-Wall -std=c11")
 set (CMAKE_C_FLAGS_DEBUG          "-g")
 set (CMAKE_C_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
 set (CMAKE_C_FLAGS_RELEASE        "-O4 -DNDEBUG")
@@ -17,6 +17,9 @@ set (CMAKE_CXX_FLAGS_DEBUG          "-g -fsanitize=address")
 set (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
 set (CMAKE_CXX_FLAGS_RELEASE        "-O4 -DNDEBUG")
 set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g")
+
+set (CMAKE_LINKER_FLAGS             "")
+set (CMAKE_LINKER_FLAGS_DEBUG       "-fsanitize=address")
 
 set (CMAKE_AR      "/usr/bin/llvm-ar")
 set (CMAKE_LINKER  "/usr/bin/llvm-ld")
