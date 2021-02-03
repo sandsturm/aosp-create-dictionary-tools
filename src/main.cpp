@@ -1,25 +1,18 @@
 #include <algorithm>
 #include <iostream>
-#include <queue>
-#include <pthread.h>
 #include <sstream>
 #include <unicode/unistr.h>
+
+#include <deque>
+#include <thread>
+#include <chrono>
+#include <mutex>
+#include <condition_variable>
 
 #include "configuration.h"
 #include "dictionary.h"
 #include "spellcheck.h"
 #include "threads.h"
-
-#define MAX 50
-static const int num_threads = 4;
-
-// Getting the mutex
-pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_cond_t dataNotProduced = PTHREAD_COND_INITIALIZER;
-pthread_cond_t dataNotConsumed = PTHREAD_COND_INITIALIZER;
-
-// Shared queue
-std::queue<int> Q;
 
 inline bool isInteger(const std::string & s){
    if(s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false;
@@ -47,35 +40,104 @@ std::string Normalize(std::string s){
     return nString;
 }
 
-void* producerFun(std::ifstream inputFile, std::string line){
+// Global Queue
+std::deque<std::string> g_deque;
 
-    while (std::getline(inputFile, line)) {
-        // Getting the lock on queue using mutex
-        pthread_mutex_lock(&mutex);
+// Global Lock
+std::mutex g_mutex;
 
-        if (Q.size() < MAX){
+// Global Conditional Variables
+std::condition_variable g_cond;
 
-            // Pushing the number into queue
-            // Q.push();
+// Producer Run Marker
+bool producer_is_running = true;
 
-            pthread_cond_broadcast(&dataNotProduced);
-        }
+// Producer Thread Function
+void Producer(std::string filename){
+  // Number of Inventories
+  std::string line;
+  std::ifstream m_InputFile;
 
-        // If queue is full, release the lock and return
-        else if (Q.size() > MAX) {
-            pthread_mutex_unlock(&mutex);
-            return NULL;
-        }
+  bool consume = false;
 
-        // If some other thread is exectuing, wait
-        else {
-            std::cout << ">> Producer is in wait.." << std::endl;
-            pthread_cond_wait(&dataNotConsumed, &mutex);
-        }
+  m_InputFile.open(filename);
 
-        // Get the mutex unlocked
-        pthread_mutex_unlock(&mutex);
+  while(std::getline(m_InputFile, line)){
+    // Smart lock, lock when initialized, protect within code curly brackets, and automatically unlock when curly brackets exit
+    // You can manually unlock to control the fine granularity of mutexes
+    std::unique_lock<std::mutex> locker( g_mutex );
+
+    // Queue a data
+    g_deque.push_back(line);
+
+    if(g_deque.size() > 100){
+      consume = true;
     }
+
+    if(consume){
+      // Unlock ahead of time, reduce the fine-grained mutex, and synchronize protection only for shared queue data
+      locker.unlock();
+
+      // Wake up a thread
+      g_cond.notify_all();
+
+      while(g_deque.size() > 10){
+        std::cout << "Deque size: " << g_deque.size() << '\n';
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+      }
+
+      consume = false;
+    }
+  }
+
+  m_InputFile.close();
+
+  // Mark Producer Proofed
+  producer_is_running = false;
+
+  // Wake up all consumer threads
+  g_cond.notify_all();
+
+  std::cout << "Producer    : I'm out of stock. I'm proofing!"  << std::endl;
+}
+
+// Consumer Thread Function
+void Consumer(int id){
+    // Item number purchased
+    std::string data;
+
+    do{
+      // Smart lock, lock when initialized, protect within code curly brackets, and automatically unlock when curly brackets exit
+      // You can manually unlock to control the fine granularity of mutexes
+      std::unique_lock<std::mutex> locker( g_mutex );
+
+      // The wait() function calls the mutually exclusive unlock() function first, then sleeps itself, and after waking up, it continues to hold the lock, protecting the queue operations that follow.
+      // You must use unique_lock, not lock_guard, because lock_guard does not have lock and unlock interfaces, and unique_lock provides both
+      g_cond.wait(locker);
+
+      // Queue is not empty
+      if(!g_deque.empty()){
+        // Remove the last data from the queue
+        data = g_deque.back();
+
+        // Delete the last data in the queue
+        g_deque.pop_back();
+
+        // Unlock ahead of time, reduce the fine-grained mutex, and synchronize protection only for shared queue data
+        locker.unlock();
+        g_cond.notify_all();
+
+        std::cout << "Consumer[" << id << "] : " << data << std::endl;
+      }
+      // Queue empty
+      else
+      {
+        locker.unlock();
+      }
+
+    } while( producer_is_running );
+
+    std::cout << "Consumer[" << id << "] : The seller has no proofing. What a pity, come back next time!"  << std::endl;
 }
 
 int main(int argc, const char *argv[]){
@@ -92,9 +154,6 @@ int main(int argc, const char *argv[]){
 
   // Containers
   std::vector<std::string> cmdLineArgs(argv, argv+argc);
-
-  // Threads
-  std::thread t[num_threads];
 
   // Process command line arguments
   for(auto& arg : cmdLineArgs){
@@ -184,6 +243,24 @@ int main(int argc, const char *argv[]){
   std::string subs;
   std::string word;
   bool found;
+
+  std::cout << "1 producer start ..." << std::endl;
+  std::thread producer(Producer, argv[1]);
+
+  std::cout << "5 consumer start ..." << std::endl;
+  std::thread consumer[ 5 ];
+  for(int i = 0; i < 5; i++){
+      consumer[i] = std::thread(Consumer, i + 1);
+  }
+
+  producer.join();
+
+  for(int i = 0; i < 5; i++){
+      consumer[i].join();
+  }
+
+  std::cout << "All threads joined." << std::endl;
+  exit(0);
 
   // Iterate through dict file from top to bottom
   for (long i = 0; std::getline(m_InputFile, line); ++i){
