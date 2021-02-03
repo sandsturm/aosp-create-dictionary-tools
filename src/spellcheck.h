@@ -7,6 +7,8 @@
 #include <string>
 #include <set>
 
+#include "dictionary.h"
+
 class Spellcheck{
   private:
     // Set with words for spellchecking input file
@@ -24,7 +26,7 @@ class Spellcheck{
 
     Spellcheck(std::string s);
 
-    void exportFile();
+    void exportFile(Dictionary dictionary);
     bool find(std::string s);
     void insert(std::string s);
     void missing(std::string s);

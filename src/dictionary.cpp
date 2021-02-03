@@ -104,9 +104,9 @@ void Dictionary::exportFile(){
   outputFile.close();
 }
 
-void Dictionary::loadAndroid(){
+void Dictionary::loadDict(std::string fileName){
   // Read Android dictionary file
-  std::ifstream file("demodata/de_wordlist.combined");
+  std::ifstream file(fileName);
   std::string line;
 
   // Iterate through Android dictionary file to capture abbreviations and offensive flag
@@ -170,7 +170,7 @@ void Dictionary::loadAndroid(){
 
   // Close Android dictionary file
   std::cout << "Vector size: " << dictionary.size() << '\n';
-  std::cout << "Android dictionary loaded" << '\n';
+  std::cout << fileName << " dictionary loaded" << '\n';
   file.close();
 }
 
@@ -204,7 +204,7 @@ bool Dictionary::findWord(std::string s){
 long Dictionary::rowWord(std::string s){
   // Search through vector
   for (long int i = 0; i < dictionary.size(); ++i){
-    if (dictionary[i].word.compare(s) == 0){   // Increment count of object if found again
+    if (dictionary[i].word.compare(s) == 0){
       return i;
     }
   }

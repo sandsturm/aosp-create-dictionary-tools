@@ -1,7 +1,8 @@
 #include <algorithm>
 #include <iostream>
+#include <queue>
+#include <pthread.h>
 #include <sstream>
-#include <thread>
 #include <unicode/unistr.h>
 
 #include "configuration.h"
@@ -9,7 +10,16 @@
 #include "spellcheck.h"
 #include "threads.h"
 
+#define MAX 50
 static const int num_threads = 4;
+
+// Getting the mutex
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t dataNotProduced = PTHREAD_COND_INITIALIZER;
+pthread_cond_t dataNotConsumed = PTHREAD_COND_INITIALIZER;
+
+// Shared queue
+std::queue<int> Q;
 
 inline bool isInteger(const std::string & s){
    if(s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false;
@@ -18,12 +28,6 @@ inline bool isInteger(const std::string & s){
    strtol(s.c_str(), &p, 10);
 
    return (*p == 0);
-}
-
-void print_status(std::string status, std::string buffer){
-  // mutex.lock();
-  std::cout << status << buffer << "%" << '\r' << std::flush;
-  // mutex.unlock();
 }
 
 /****************************************************
@@ -43,34 +47,36 @@ std::string Normalize(std::string s){
     return nString;
 }
 
-// bool read_sourcefile(std::ifstream m_InputFile, std::vector<std::string> &wordvector){
-//   std::string line;
-//
-//   for (long i = 0; std::getline(m_InputFile, line); ++i){
-//     std::istringstream iss(line);
-//
-//     do{
-//       std::string subs;
-//       iss >> subs;
-//
-//       // Remove punctuation
-//       std::string word;
-//       std::remove_copy_if(subs.begin(), subs.end(),
-//                     std::back_inserter(word), //Store output
-//                     std::ptr_fun<int, int>(&std::ispunct)
-//                    );
-//
-//       // TODO Check why empty word is provided by function
-//       // Exclude empty words and numbers
-//       if (word.length() > 0 && isInteger(word) == false){
-//         wordvector.push_back(word);
-//       }
-//     } while (iss);
-//   }
-//
-//   return true;
-// }
+void* producerFun(std::ifstream inputFile, std::string line){
 
+    while (std::getline(inputFile, line)) {
+        // Getting the lock on queue using mutex
+        pthread_mutex_lock(&mutex);
+
+        if (Q.size() < MAX){
+
+            // Pushing the number into queue
+            // Q.push();
+
+            pthread_cond_broadcast(&dataNotProduced);
+        }
+
+        // If queue is full, release the lock and return
+        else if (Q.size() > MAX) {
+            pthread_mutex_unlock(&mutex);
+            return NULL;
+        }
+
+        // If some other thread is exectuing, wait
+        else {
+            std::cout << ">> Producer is in wait.." << std::endl;
+            pthread_cond_wait(&dataNotConsumed, &mutex);
+        }
+
+        // Get the mutex unlocked
+        pthread_mutex_unlock(&mutex);
+    }
+}
 
 int main(int argc, const char *argv[]){
 
@@ -126,16 +132,23 @@ int main(int argc, const char *argv[]){
 
   // Load spellcheck files
   std::thread t1(&Spellcheck::open, &m_Spellcheck, m_Configuration.value("spellcheck_dictionary"));
-  // m_Spellcheck.open(m_Configuration.value("spellcheck_dictionary"));
-  // m_Spellcheck.open(m_Configuration.value("spellcheck_custom"));
 
   // Load Android dictionary
-  std::thread t2(&Dictionary::loadAndroid, &m_Dictionary);
+  std::thread t2(&Dictionary::loadDict, &m_Dictionary, "demodata/de_wordlist.combined");
+
+  // m_Spellcheck.open(m_Configuration.value("spellcheck_dictionary"));
+  // m_Spellcheck.open(m_Configuration.value("spellcheck_custom"));
 
   //Join the threads with the main thread
   t1.join();
   t2.join();
-  m_Spellcheck.open(m_Configuration.value("spellcheck_custom"));
+
+  t1 = std::thread(&Spellcheck::open, &m_Spellcheck, m_Configuration.value("spellcheck_custom"));
+  t2 = std::thread(&Dictionary::loadDict, &m_Dictionary, "demodata/de_wordlist.custom");
+
+  //Join the threads with the main thread
+  t1.join();
+  t2.join();
 
   // Count every line of the file
   for (count = 0; std::getline(m_InputFile, line); ++count){
@@ -168,6 +181,10 @@ int main(int argc, const char *argv[]){
 
   auto start = std::chrono::high_resolution_clock::now();
 
+  std::string subs;
+  std::string word;
+  bool found;
+
   // Iterate through dict file from top to bottom
   for (long i = 0; std::getline(m_InputFile, line); ++i){
   // for (long i = 0; std::getline(m_InputFile, line) && i < 10000; ++i){
@@ -185,11 +202,9 @@ int main(int argc, const char *argv[]){
     std::istringstream iss(line);
 
     do{
-      std::string subs;
       iss >> subs;
 
       // Remove punctuation
-      std::string word;
       std::remove_copy_if(subs.begin(), subs.end(),
                     std::back_inserter(word), //Store output
                     std::ptr_fun<int, int>(&std::ispunct)
@@ -198,7 +213,7 @@ int main(int argc, const char *argv[]){
       // TODO Check why empty word is provided by function
       // Exclude empty words and numbers
       if (word.length() > 0 && isInteger(word) == false){
-        bool found = false;
+        found = false;
 
         // Check if normalized word is in the m_Spellcheck and add it
         if (!m_Spellcheck.find(word)){ // If word with capital letter cannot be found
@@ -209,7 +224,6 @@ int main(int argc, const char *argv[]){
         } else {
           found = true;
         }
-
         if (found){
           m_Dictionary.addWord(word);
         } else {
@@ -238,7 +252,7 @@ int main(int argc, const char *argv[]){
   m_Dictionary.sortFrequency();
 
   t1 = std::thread(&Dictionary::exportFile, &m_Dictionary);
-  t2 = std::thread(&Spellcheck::exportFile, &m_Spellcheck);
+  t2 = std::thread(&Spellcheck::exportFile, &m_Spellcheck, m_Dictionary);
 
   t1.join();
   t2.join();

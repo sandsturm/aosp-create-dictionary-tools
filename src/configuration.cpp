@@ -6,14 +6,14 @@
 Configuration::Configuration(){
   const char configdata[] = ""
   // Export the top count of missing words (in percent)
-  "minimum_missing_spellcheck=1\n"
+  "minimum_missing_spellcheck=5\n"
 
   // Filename for words not found in spellcheck
   "filename_missing_spellcheck=missing_spellcheck.txt\n"
 
   // Spellcheck file with official dictionary e.g. from LibreOffice
-  "spellcheck_dictionary=demodata/de_DE_frami.dic\n"
-  // "spellcheck_dictionary=demodata/German_de_DE.dic\n"
+  // "spellcheck_dictionary=demodata/de_DE_frami.dic\n"
+  "spellcheck_dictionary=demodata/German_de_DE.dic\n"
 
   // Own (custom) spellcheck file
   "spellcheck_custom=demodata/own_spellcheck.txt";

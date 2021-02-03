@@ -27,7 +27,7 @@ class Dictionary{
     bool findWord(std::string s);
     long rowWord(std::string s);
     void exportFile();
-    void loadAndroid();
+    void loadDict(std::string fileName);
     void sortCount();
     void sortFrequency();
 };

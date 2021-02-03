@@ -4,7 +4,8 @@
 #include <sstream>
 #include <vector>
 
-#import "spellcheck.h"
+#include "dictionary.h"
+#include "spellcheck.h"
 
 Spellcheck::Spellcheck(unsigned int min){
   m_MinWordcount = min;
@@ -69,10 +70,11 @@ void Spellcheck::missing(std::string s){
   }
 }
 
-void Spellcheck::exportFile(){
+void Spellcheck::exportFile(Dictionary dictionary){
   // Export missing m_Spellcheck
   // Open file to write missing m_Spellcheck
-  std::ofstream missesFile("demodata/missing_in_spellcheck.txt");
+  std::ofstream missesSpellcheckFile("demodata/missing_in_spellcheck.txt");
+  std::ofstream missesDictionaryFile("demodata/missing_in_spellcheck_dictionary.txt");
 
   std::map<std::string, unsigned int>::iterator it;
 
@@ -88,17 +90,21 @@ void Spellcheck::exportFile(){
 
   // Read from configuration file how many missing words should be exported (in percent)
   unsigned int min_wordcount = words.size() * m_MinWordcount / 100;
-  std::cout << min_wordcount << '\n';
+  std::cout << "Minimum wordcount: " << min_wordcount << '\n';
 
   std::vector<std::pair<std::string, unsigned int>>::iterator iter;
   unsigned int count = 0;
 
   for(iter = words.begin(); (iter != words.end() && count < min_wordcount) ; iter++){
     count++;
-    missesFile << iter->first << '\n';
+    missesSpellcheckFile << iter->first << '\n';
+    if(dictionary.rowWord(iter->first) < 0){
+      missesDictionaryFile << iter->first << '\n';
+    }
   }
 
   std::cout << "Spellcheck file exported." << '\n';
 
-  missesFile.close();
+  missesSpellcheckFile.close();
+  missesDictionaryFile.close();
 }
