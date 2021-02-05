@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <locale>
 #include <unicode/unistr.h>
 
 #include <deque>
@@ -47,14 +48,14 @@ std::deque<std::string> g_deque;
 std::mutex g_mutex;
 
 // Global Conditional Variables
-std::condition_variable g_cond;
+std::condition_variable g_cond, g_spell, g_dict;
 
-// Producer Run Marker
+// FileReader Run Marker
 bool producer_is_running = true;
 
-// Producer Thread Function
-void Producer(std::string filename){
-  // Number of Inventories
+// FileReader Thread Function
+void FileReader(std::string filename){
+  int counter = 0;
   std::string line;
   std::ifstream m_InputFile;
 
@@ -66,6 +67,12 @@ void Producer(std::string filename){
     // Smart lock, lock when initialized, protect within code curly brackets, and automatically unlock when curly brackets exit
     // You can manually unlock to control the fine granularity of mutexes
     std::unique_lock<std::mutex> locker( g_mutex );
+
+    counter += 1;
+
+    if(counter % 10000 == 0){
+      std::cout << counter << '\r' << std::flush;
+    }
 
     // Queue a data
     g_deque.push_back(line);
@@ -79,10 +86,10 @@ void Producer(std::string filename){
       locker.unlock();
 
       // Wake up a thread
-      g_cond.notify_all();
+      g_cond.notify_one();
 
       while(g_deque.size() > 10){
-        std::cout << "Deque size: " << g_deque.size() << '\n';
+        // std::cout << "Deque size: " << g_deque.size() << '\n';
         std::this_thread::sleep_for(std::chrono::seconds(1));
       }
 
@@ -92,52 +99,112 @@ void Producer(std::string filename){
 
   m_InputFile.close();
 
-  // Mark Producer Proofed
+  // Mark FileReader Proofed
   producer_is_running = false;
 
   // Wake up all consumer threads
   g_cond.notify_all();
 
-  std::cout << "Producer    : I'm out of stock. I'm proofing!"  << std::endl;
+  std::cout << "FileReader: Completed reading file" << std::endl;
 }
 
-// Consumer Thread Function
-void Consumer(int id){
-    // Item number purchased
-    std::string data;
+// Parser Thread Function
+void Parser(int id, Spellcheck &spellcheck, Dictionary &dictionary){
+    std::string line;
+    std::string subs;
+    std::string word;
+    std::string wordNorm;
+
+    bool found = false;
+
+    std::istringstream iss;
+
+    int counter = 0;
 
     do{
       // Smart lock, lock when initialized, protect within code curly brackets, and automatically unlock when curly brackets exit
       // You can manually unlock to control the fine granularity of mutexes
       std::unique_lock<std::mutex> locker( g_mutex );
 
-      // The wait() function calls the mutually exclusive unlock() function first, then sleeps itself, and after waking up, it continues to hold the lock, protecting the queue operations that follow.
-      // You must use unique_lock, not lock_guard, because lock_guard does not have lock and unlock interfaces, and unique_lock provides both
-      g_cond.wait(locker);
-
       // Queue is not empty
       if(!g_deque.empty()){
         // Remove the last data from the queue
-        data = g_deque.back();
+        line = g_deque.back();
 
         // Delete the last data in the queue
         g_deque.pop_back();
 
         // Unlock ahead of time, reduce the fine-grained mutex, and synchronize protection only for shared queue data
         locker.unlock();
-        g_cond.notify_all();
 
-        std::cout << "Consumer[" << id << "] : " << data << std::endl;
+        iss = std::istringstream(line);
+
+        do{
+          iss >> subs;
+
+          word = "";
+
+          // Remove punctuation
+          std::remove_copy_if(subs.begin(), subs.end(),
+                        std::back_inserter(word), //Store output
+                        std::ptr_fun<int, int>(&std::ispunct)
+                       );
+
+         counter += 1;
+
+         found = false;
+
+         // TODO Check why empty word is provided by function
+         // Exclude empty words and numbers
+         if (word.length() > 0 && isInteger(word) == false){
+
+           std::locale loc;
+
+           // Check if normalized word is in the m_Spellcheck and add it
+           if(!spellcheck.find(word)){ // If word with capital letter cannot be found
+             if(word.front() != std::tolower(word.front(), loc)){
+               wordNorm = word;
+               std::string first = Normalize(word.substr(0,1));
+               wordNorm.front() = first[0];
+
+               if (spellcheck.find(wordNorm)){ // but can be found with lower case letter, take this one
+                 word = wordNorm;
+                 found = true;
+               }
+             }
+           } else {
+             found = true;
+           }
+
+           if (found){
+             std::unique_lock<std::mutex> dictlocker( g_mutex );
+             dictionary.addWord(word);
+             dictlocker.unlock();
+           } else {
+             std::unique_lock<std::mutex> spelllocker( g_mutex );
+             spellcheck.missing(word);
+             spelllocker.unlock();
+           }
+         }
+
+        } while (iss);
+
+        // std::cout << "Parser[" << id << "] : " << data << std::endl;
+
       }
       // Queue empty
       else
       {
+        // The wait() function calls the mutually exclusive unlock() function first, then sleeps itself, and after waking up, it continues to hold the lock, protecting the queue operations that follow.
+        // You must use unique_lock, not lock_guard, because lock_guard does not have lock and unlock interfaces, and unique_lock provides both
+        // g_cond.wait(locker);
+
         locker.unlock();
       }
 
     } while( producer_is_running );
 
-    std::cout << "Consumer[" << id << "] : The seller has no proofing. What a pity, come back next time!"  << std::endl;
+    // std::cout << "Parser[" << id << "] : " << counter << std::endl;
 }
 
 int main(int argc, const char *argv[]){
@@ -211,7 +278,9 @@ int main(int argc, const char *argv[]){
 
   // Count every line of the file
   for (count = 0; std::getline(m_InputFile, line); ++count){
-    std::cout << status << count << '\r' << std::flush;
+    if(count % 1000 == 0){
+      std::cout << status << count << '\r' << std::flush;
+    }
   }
 
   std::cout << status << count << '\n'  << std::flush;
@@ -224,105 +293,40 @@ int main(int argc, const char *argv[]){
   std::string dictWord;
   std::string dictCount;
 
-  // Store file length
-  long length = count;
-
-  // for (std::thread & th : Workers){
-  // // If thread Object is Joinable then Join that thread.
-  //   if (th.joinable())
-  //      th.join();
-  // }
-
   status = "Parsed lines: ";
-
-  int buffer = 0;
-  int localbuffer;
 
   auto start = std::chrono::high_resolution_clock::now();
 
   std::string subs;
   std::string word;
-  bool found;
 
   std::cout << "1 producer start ..." << std::endl;
-  std::thread producer(Producer, argv[1]);
+  std::thread producer(FileReader, argv[1]);
 
-  std::cout << "5 consumer start ..." << std::endl;
-  std::thread consumer[ 5 ];
-  for(int i = 0; i < 5; i++){
-      consumer[i] = std::thread(Consumer, i + 1);
+  //may return 0 when not able to detect
+  const auto processor_count = std::thread::hardware_concurrency();
+  int consumer_processes = processor_count - 2;
+  // int consumer_processes = 5;
+
+  std::cout << consumer_processes << " consumer start ..." << std::endl;
+  std::thread consumer[consumer_processes];
+  for(int i = 0; i < consumer_processes; i++){
+      consumer[i] = std::thread(Parser, i + 1, std::ref(m_Spellcheck), std::ref(m_Dictionary));
   }
 
   producer.join();
 
-  for(int i = 0; i < 5; i++){
+  for(int i = 0; i < consumer_processes; i++){
       consumer[i].join();
   }
 
   std::cout << "All threads joined." << std::endl;
-  exit(0);
-
-  // Iterate through dict file from top to bottom
-  for (long i = 0; std::getline(m_InputFile, line); ++i){
-  // for (long i = 0; std::getline(m_InputFile, line) && i < 10000; ++i){
-    count--;
-
-    localbuffer = 100 - (count * 100 / length);
-
-    if (localbuffer > buffer){
-      // Workers.push_back(std::thread(print_status, status, std::to_string(buffer)));
-      buffer = localbuffer;
-    }
-
-    std::cout << status << buffer << "% / " << count << '\r' << std::flush;
-
-    std::istringstream iss(line);
-
-    do{
-      iss >> subs;
-
-      // Remove punctuation
-      std::remove_copy_if(subs.begin(), subs.end(),
-                    std::back_inserter(word), //Store output
-                    std::ptr_fun<int, int>(&std::ispunct)
-                   );
-
-      // TODO Check why empty word is provided by function
-      // Exclude empty words and numbers
-      if (word.length() > 0 && isInteger(word) == false){
-        found = false;
-
-        // Check if normalized word is in the m_Spellcheck and add it
-        if (!m_Spellcheck.find(word)){ // If word with capital letter cannot be found
-          if (m_Spellcheck.find(Normalize(word))){ // but can be found with lower case letter, take this one
-            word = Normalize(word);
-            found = true;
-          }
-        } else {
-          found = true;
-        }
-        if (found){
-          m_Dictionary.addWord(word);
-        } else {
-          m_Spellcheck.missing(word);
-        }
-      }
-    } while (iss);
-
-    // Join threads
-    // wait for threads to finnish or kill threads
-    // for (std::thread & th : Workers){
-    //     // If thread Object is Joinable then Join that thread.
-    //       if (th.joinable())
-    //            th.join();
-    // }
-  }
-
-  std::cout << status << "100%" << '\n' << std::flush;
 
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
   std::cout << "Duration: " << duration << " milliisec \n" << std::flush;
+
+  std::cout << status << "100%" << '\n' << std::flush;
 
   m_Dictionary.sortCount();
   m_Dictionary.addFrequency();
