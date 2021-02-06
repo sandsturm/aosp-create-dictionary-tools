@@ -45,7 +45,7 @@ std::string Normalize(std::string s){
 std::deque<std::string> g_deque;
 
 // Global Lock
-std::mutex g_mutex;
+std::mutex g_mutex, g_mutex_spell, g_mutex_dict;
 
 // Global Conditional Variables
 std::condition_variable g_cond, g_spell, g_dict;
@@ -90,7 +90,7 @@ void FileReader(std::string filename){
 
       while(g_deque.size() > 10){
         // std::cout << "Deque size: " << g_deque.size() << '\n';
-        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(75));
       }
 
       consume = false;
@@ -120,6 +120,9 @@ void Parser(int id, Spellcheck &spellcheck, Dictionary &dictionary){
     std::istringstream iss;
 
     int counter = 0;
+
+    Spellcheck m_Spellcheck("demodata/German_de_DE.dic");
+    Dictionary m_Dictionary;
 
     do{
       // Smart lock, lock when initialized, protect within code curly brackets, and automatically unlock when curly brackets exit
@@ -161,13 +164,13 @@ void Parser(int id, Spellcheck &spellcheck, Dictionary &dictionary){
            std::locale loc;
 
            // Check if normalized word is in the m_Spellcheck and add it
-           if(!spellcheck.find(word)){ // If word with capital letter cannot be found
+           if(!m_Spellcheck.find(word)){ // If word with capital letter cannot be found
              if(word.front() != std::tolower(word.front(), loc)){
                wordNorm = word;
                std::string first = Normalize(word.substr(0,1));
                wordNorm.front() = first[0];
 
-               if (spellcheck.find(wordNorm)){ // but can be found with lower case letter, take this one
+               if (m_Spellcheck.find(wordNorm)){ // but can be found with lower case letter, take this one
                  word = wordNorm;
                  found = true;
                }
@@ -177,13 +180,9 @@ void Parser(int id, Spellcheck &spellcheck, Dictionary &dictionary){
            }
 
            if (found){
-             std::unique_lock<std::mutex> dictlocker( g_mutex );
-             dictionary.addWord(word);
-             dictlocker.unlock();
+             m_Dictionary.addWord(word);
            } else {
-             std::unique_lock<std::mutex> spelllocker( g_mutex );
-             spellcheck.missing(word);
-             spelllocker.unlock();
+             m_Spellcheck.missing(word);
            }
          }
 

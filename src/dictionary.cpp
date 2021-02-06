@@ -46,7 +46,7 @@ void Dictionary::addWord(std::string s){
     tempO.word = s;
     tempO.count = 1;
     tempO.android = 0;
-
+    
     dictionary.push_back(tempO); // Push structure object into words vector
   }
 }

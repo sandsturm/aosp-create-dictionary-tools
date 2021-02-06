@@ -4,8 +4,8 @@
 
 #include <fstream>
 #include <map>
-#include <string>
 #include <set>
+#include <string>
 
 #include "dictionary.h"
 
