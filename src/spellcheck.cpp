@@ -7,15 +7,18 @@
 #include "dictionary.h"
 #include "spellcheck.h"
 
-Spellcheck::Spellcheck(unsigned int min){
-  m_MinWordcount = min;
+Spellcheck::Spellcheck(){
 }
 
 Spellcheck::~Spellcheck(){
 }
 
-Spellcheck::Spellcheck(std::string s){
-    spellcheck.insert(s);
+void Spellcheck::set(int id, int workers){
+  m_Id = id;
+  m_Workers = workers;
+
+  // m_MinWordcount = min;
+  m_MinWordcount = 50;
 }
 
 bool Spellcheck::find(std::string s){
@@ -47,10 +50,22 @@ void Spellcheck::open(std::string s){
       // Check if the / delimiter is in the line.
       // There are some lines without delimiter.
       std::string token = subs.substr(0, subs.find(delimiter));
-      if (token.length() > 0){
+      if(token.length() > 0){
         subs = token;
       }
-      spellcheck.insert(subs);
+
+      if(m_Id == 1 &&
+          ((int(subs.front()) >= 65 + m_Id * (25/m_Workers) &&
+          int(subs.front()) < 65 + (m_Id + 1) * (25/m_Workers)) ||
+          (int(subs.front()) >= 97 + m_Id * (25/m_Workers) &&
+          int(subs.front()) < 97 + (m_Id + 1) * (25/m_Workers)))
+        ){
+        // std::cout << int(subs.front()) << ": " << subs;
+      }
+
+      if(1 == 1){
+        spellcheck.insert(subs);
+      }
     } while (iss);
   }
 
@@ -62,11 +77,11 @@ void Spellcheck::open(std::string s){
 void Spellcheck::missing(std::string s){
   std::map<std::string, unsigned int>::iterator it;
 
-  it = missingSpellcheck.find(s);
-  if(it != missingSpellcheck.end()){
-    missingSpellcheck[s] = it->second + 1;
+  it = m_MissingSpellcheck.find(s);
+  if(it != m_MissingSpellcheck.end()){
+    m_MissingSpellcheck[s] = it->second + 1;
   } else {
-    missingSpellcheck[s] = 1;
+    m_MissingSpellcheck[s] = 1;
   }
 }
 
@@ -80,7 +95,7 @@ void Spellcheck::exportFile(Dictionary dictionary){
 
   // Copy missing words map contain to vector for easier sorting
   std::vector<std::pair<std::string, unsigned int>> words;
-  for (it = missingSpellcheck.begin(); it != missingSpellcheck.end(); it++)
+  for (it = m_MissingSpellcheck.begin(); it != m_MissingSpellcheck.end(); it++)
       words.push_back(*it);
 
   // Sort pairs container

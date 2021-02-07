@@ -15,17 +15,19 @@ class Spellcheck{
     std::set<std::string> spellcheck;
 
     // Set with words which are in the input file but are missing in the spellcheck file
-    std::map<std::string, unsigned int> missingSpellcheck;
+    std::map<std::string, unsigned int> m_MissingSpellcheck;
+
+    int m_Id;
+    int m_Workers;
 
     // Minimum number of hits to export to missing spellcheck file
     unsigned int m_MinWordcount;
 
   public:
-    Spellcheck(unsigned int min);
+    Spellcheck();
     ~Spellcheck();
 
-    Spellcheck(std::string s);
-
+    void set(int id, int workers);
     void exportFile(Dictionary dictionary);
     bool find(std::string s);
     void insert(std::string s);
