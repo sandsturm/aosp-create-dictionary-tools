@@ -43,7 +43,7 @@ std::string Normalize(std::string s){
 
 // Global Queues
 std::deque<std::string> g_lines;
-std::deque<std::string> g_words;
+std::deque<std::string> g_words[5];
 
 // Global Lock
 std::mutex g_mutex_lines, g_mutex_words[5], g_mutex_lines_spell, g_mutex_lines_dict;
@@ -163,14 +163,14 @@ void LineReader(int workers){
        id = calc_queue(int(word.front()), workers);
 
        std::unique_lock<std::mutex> lockerwords(g_mutex_words[id]);
-       g_words.push_front(word);
+       g_words[id].push_front(word);
        lockerwords.unlock();
 
        counter += 1;
 
       } while (iss);
 
-      if(g_words.size() > 100){
+      if(g_words[0].size() > 100){
         consume = true;
       }
 
@@ -181,7 +181,7 @@ void LineReader(int workers){
         // Wake up a thread
         g_cond.notify_one();
 
-        while(g_words.size() > 10){
+        while(g_words[0].size() > 10){
           // std::cout << "Deque size: " << g_lines.size() << '\n';
           std::this_thread::sleep_for(std::chrono::milliseconds(75));
         }
@@ -202,9 +202,13 @@ void LineReader(int workers){
       locker.unlock();
     }
 
-    std::cout << "Size words: " << g_words.size() << '\n';
+    for(int i = 0; i < workers; i++){
+      std::cout << "ID " << i << ": " << g_words[i].size() << " ";
+      counter += g_words[i].size();
+    }
+    std::cout << '\n';
 
-  } while(producer_is_running && g_words.size() > 0);
+  } while(producer_is_running && counter > 0);
 }
 
 // Parser Thread Function
@@ -232,10 +236,10 @@ void Parser(int id, int workers, Spellcheck &spellcheck, Dictionary &dictionary)
         (int(subs.front()) >= 97 + id * (25/workers) &&
         int(subs.front()) < 97 + (id + 1) * (25/workers)))){
         // Remove the last data from the queue
-        line = g_words.back();
+        line = g_words[id].back();
 
         // Delete the last data in the queue
-        g_words.pop_back();
+        g_words[id].pop_back();
 
         // Unlock ahead of time, reduce the fine-grained mutex, and synchronize protection only for shared queue data
         locker.unlock();
