@@ -70,7 +70,7 @@ void Spellcheck::open(std::string s){
   }
 
   // Close spellcheckFile since everthing is in the spellcheck vector
-  std::cout << "Spellcheck file loaded." << '\n';
+  std::cout << "Spellcheck file for ID " << m_Id << " loaded." << '\n';
   m_SpellcheckFile.close();
 }
 
