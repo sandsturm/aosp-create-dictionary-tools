@@ -123,3 +123,11 @@ void Spellcheck::exportFile(Dictionary dictionary){
   missesSpellcheckFile.close();
   missesDictionaryFile.close();
 }
+
+void Spellcheck::append(std::map<std::string, unsigned int> missing){
+  m_MissingSpellcheck.insert(missing.begin(), missing.end());
+}
+
+std::map<std::string, unsigned int> Spellcheck::getMissingSpellcheck(){
+  return m_MissingSpellcheck;
+}

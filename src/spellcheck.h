@@ -33,6 +33,9 @@ class Spellcheck{
     void insert(std::string s);
     void missing(std::string s);
     void open(std::string s);
+
+    void append(std::map<std::string, unsigned int> missing);
+    std::map<std::string, unsigned int> getMissingSpellcheck();
 };
 
 #endif // SPELLCHECK_H ///:~

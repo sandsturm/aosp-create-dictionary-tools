@@ -46,7 +46,7 @@ void Dictionary::addWord(std::string s){
     tempO.word = s;
     tempO.count = 1;
     tempO.android = 0;
-    
+
     dictionary.push_back(tempO); // Push structure object into words vector
   }
 }
@@ -169,7 +169,6 @@ void Dictionary::loadDict(std::string fileName){
   }
 
   // Close Android dictionary file
-  std::cout << "Vector size: " << dictionary.size() << '\n';
   std::cout << fileName << " dictionary loaded" << '\n';
   file.close();
 }
@@ -209,4 +208,12 @@ long Dictionary::rowWord(std::string s){
     }
   }
   return -1;
+}
+
+void Dictionary::append(std::vector<structWord> externdict){
+  dictionary.insert(dictionary.end(), externdict.begin(), externdict.end());
+}
+
+std::vector<structWord> Dictionary::getDictionaryEntries(){
+  return dictionary;
 }

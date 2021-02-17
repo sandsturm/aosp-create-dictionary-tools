@@ -157,6 +157,7 @@ void LineReader(int workers){
                       std::back_inserter(word), //Store output
                       std::ptr_fun<int, int>(&std::ispunct)
                      );
+
         if(word.length() > 0 && (
                       int(word.front()) >= 65 &&
                       int(word.front()) <= 90) || (
@@ -417,7 +418,7 @@ int main(int argc, const char *argv[]){
   linereader.join();
 
   for(int i = 0; i < consumer_processes; i++){
-      consumer[i].join();
+    consumer[i].join();
   }
 
   std::cout << "All threads joined." << std::endl;
@@ -431,6 +432,16 @@ int main(int argc, const char *argv[]){
   m_Dictionary.sortCount();
   m_Dictionary.addFrequency();
   m_Dictionary.sortFrequency();
+
+  std::map<std::string, unsigned int> MissingSpellcheck;
+
+  for(int i = 1; i < consumer_processes; i++){
+    std::map<std::string, unsigned int> temp = m_Spellcheck[i].getMissingSpellcheck();
+    m_Spellcheck[0].append(temp);
+  }
+
+  m_Spellcheck[0].exportFile(m_Dictionary);
+  m_Dictionary.exportFile();
 
   // t1 = std::thread(&Dictionary::exportFile, &m_Dictionary);
   // t2 = std::thread(&Spellcheck::exportFile, &m_Spellcheck, m_Dictionary);

@@ -30,6 +30,9 @@ class Dictionary{
     void loadDict(std::string fileName);
     void sortCount();
     void sortFrequency();
+
+    void append(std::vector<structWord> missing);
+    std::vector<structWord> getDictionaryEntries();
 };
 
 #endif // DICTIONARY_H ///:~
