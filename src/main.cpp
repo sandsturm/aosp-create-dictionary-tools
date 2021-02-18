@@ -350,23 +350,9 @@ int main(int argc, const char *argv[]){
     exit(0);
   }
 
-  // // Load spellcheck files
-  std::thread t1;
-  // std::thread t1(&Spellcheck::open, &m_Spellcheck, m_Configuration.value("spellcheck_dictionary"));
-
   // Load Android dictionary
-  std::thread t2(&Dictionary::loadDict, &m_Dictionary, "demodata/de_wordlist.combined");
-
-  //Join the threads with the main thread
-  // t1.join();
-  t2.join();
-
-  // t1 = std::thread(&Spellcheck::open, &m_Spellcheck, m_Configuration.value("spellcheck_custom"));
-  t2 = std::thread(&Dictionary::loadDict, &m_Dictionary, "demodata/de_wordlist.custom");
-
-  //Join the threads with the main thread
-  // t1.join();
-  t2.join();
+  m_Dictionary.loadDict("demodata/de_wordlist.combined");
+  m_Dictionary.loadDict("demodata/de_wordlist.custom");
 
   // Count every line of the file
   for (count = 0; std::getline(m_InputFile, line); ++count){
@@ -398,7 +384,7 @@ int main(int argc, const char *argv[]){
   //may return 0 when not able to detect
   // const auto processor_count = std::thread::hardware_concurrency();
   // int consumer_processes = processor_count - 2;
-  int consumer_processes = 8;
+  int consumer_processes = 7;
 
   std::cout << "2 line parser start ..." << std::endl;
   std::thread linereader(LineReader, consumer_processes);
