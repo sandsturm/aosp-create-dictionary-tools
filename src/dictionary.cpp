@@ -74,7 +74,7 @@ void Dictionary::exportFile(){
   // Format: dictionary=main:de,locale=de,description=Deutsch,date=1414726263,version=54,REQUIRES_GERMAN_UMLAUT_PROCESSING=1
   std::string strLocale = "de";
   std::string strDescription = "Deutsch";
-  std::string strVersion = "54";
+  std::string strVersion = "56";
 
   outputFile << "dictionary=main:" << strLocale
              << ",locale=" << strLocale
@@ -94,9 +94,13 @@ void Dictionary::exportFile(){
       offensive = ",possibly_offensive=true";
     }
 
-    // Format: word=der,f=216,flags=,originalFreq=216
-    // std::cout << dictionary[i].word << '\n';
-    outputFile << " word=" << dictionary[i].word << ",f=" << dictionary[i].freq << ",flags=" << dictionary[i].flags << ",originalFreq=" << dictionary[i].freq << offensive << '\n';
+    // TODO Find out why there are empty entries in m_Dictionary.dictionary!!!
+    if(dictionary[i].word.size() > 0){
+      // Format: word=der,f=216,flags=,originalFreq=216
+      // std::cout << dictionary[i].word << '\n';
+      outputFile << " word=" << dictionary[i].word << ",f=" << dictionary[i].freq << ",flags=" << dictionary[i].flags << ",originalFreq=" << dictionary[i].freq << offensive << '\n';
+    }
+
   }
 
   std::cout << "Dictionary file exported." << '\n';
