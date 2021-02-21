@@ -8,17 +8,26 @@
 #include "spellcheck.h"
 
 Spellcheck::Spellcheck(){
+  // m_MinWordcount = min;
+  m_MinWordcount = 50;
 }
 
 Spellcheck::~Spellcheck(){
 }
 
+int Spellcheck::calc_queue(int character){
+  if(character < 0){
+    return 0;
+  } else if(character > 90){
+    return (character - 97) * m_Workers / 27;
+  } else {
+    return (character - 65) * m_Workers / 27;
+  }
+}
+
 void Spellcheck::set(int id, int workers){
   m_Id = id;
   m_Workers = workers;
-
-  // m_MinWordcount = min;
-  m_MinWordcount = 50;
 }
 
 bool Spellcheck::find(std::string s){
@@ -54,23 +63,12 @@ void Spellcheck::open(std::string s){
         subs = token;
       }
 
-      if(m_Id == 1 &&
-          ((int(subs.front()) >= 65 + m_Id * (25/m_Workers) &&
-          int(subs.front()) < 65 + (m_Id + 1) * (25/m_Workers)) ||
-          (int(subs.front()) >= 97 + m_Id * (25/m_Workers) &&
-          int(subs.front()) < 97 + (m_Id + 1) * (25/m_Workers)))
-        ){
-        // std::cout << int(subs.front()) << ": " << subs;
-      }
-
-      if(1 == 1){
+      if(calc_queue(int(subs.front())) == m_Id){
         spellcheck.insert(subs);
       }
     } while (iss);
   }
-
   // Close spellcheckFile since everthing is in the spellcheck vector
-  std::cout << "Spellcheck file for ID " << m_Id << " loaded." << '\n';
   m_SpellcheckFile.close();
 }
 

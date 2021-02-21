@@ -27,6 +27,8 @@ class Spellcheck{
     Spellcheck();
     ~Spellcheck();
 
+    int calc_queue(int character);
+
     void set(int id, int workers);
     void exportFile(Dictionary dictionary);
     bool find(std::string s);

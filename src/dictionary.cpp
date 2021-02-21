@@ -1,4 +1,4 @@
-#import "dictionary.h"
+#include "dictionary.h"
 
 #include <algorithm>
 #include <chrono>
@@ -39,6 +39,21 @@ Dictionary::Dictionary(std::string s, unsigned int fr, std::string fl, unsigned 
   dictionary.push_back(tempO); // Push structure object into words vector
 }
 
+int Dictionary::calc_queue(int character, int workers){
+  if(character < 0){
+    return 0;
+  } else if(character > 90){
+    return (character - 97) * workers / 27;
+  } else {
+    return (character - 65) * workers / 27;
+  }
+}
+
+void Dictionary::set(int id, int workers){
+  m_Id = id;
+  m_Workers = workers;
+}
+
 void Dictionary::addWord(std::string s){
   if (findWord(s) != true){
     structWord tempO;
@@ -66,48 +81,6 @@ void Dictionary::addFrequency(){
   }
 }
 
-void Dictionary::exportFile(){
-  // Open the new dictionary file to write data
-  std::ofstream outputFile("demodata/output.txt");
-
-  // Write version and timestamp
-  // Format: dictionary=main:de,locale=de,description=Deutsch,date=1414726263,version=54,REQUIRES_GERMAN_UMLAUT_PROCESSING=1
-  std::string strLocale = "de";
-  std::string strDescription = "Deutsch";
-  std::string strVersion = "56";
-
-  outputFile << "dictionary=main:" << strLocale
-             << ",locale=" << strLocale
-             << ",description=" << strDescription
-             << ",date=" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()
-             << ",version=" << strVersion
-             << ",REQUIRES_GERMAN_UMLAUT_PROCESSING=1"
-             << '\n';
-
-  // Export vector to result file
-  for (long i = 0; i < long(dictionary.size()); ++i){
-  // for (long i = 0; i < long(words.size()) || i < 10000; ++i){
-
-    std::string offensive = "";
-
-    if (dictionary[i].offensive){
-      offensive = ",possibly_offensive=true";
-    }
-
-    // TODO Find out why there are empty entries in m_Dictionary.dictionary!!!
-    if(dictionary[i].word.size() > 0){
-      // Format: word=der,f=216,flags=,originalFreq=216
-      // std::cout << dictionary[i].word << '\n';
-      outputFile << " word=" << dictionary[i].word << ",f=" << dictionary[i].freq << ",flags=" << dictionary[i].flags << ",originalFreq=" << dictionary[i].freq << offensive << '\n';
-    }
-
-  }
-
-  std::cout << "Dictionary file exported." << '\n';
-
-  outputFile.close();
-}
-
 void Dictionary::loadDict(std::string fileName){
   // Read Android dictionary file
   std::ifstream file(fileName);
@@ -129,42 +102,44 @@ void Dictionary::loadDict(std::string fileName){
 
         std::string word = subs.substr(first + 5, last - first - 5);
 
-        first = subs.find("f=");
-        last = subs.find(",", first);
-
-        if (first < subs.length()){
-
-          unsigned int freq = std::stoi(subs.substr(first + 2, last - first - 2));
-          first = subs.find("originalFreq=");
+        if(calc_queue(word.front(), m_Workers) == m_Id){
+          first = subs.find("f=");
           last = subs.find(",", first);
 
           if (first < subs.length()){
 
-            unsigned int originalFreq = std::stoi(subs.substr(first + 13, last - first - 13));
-
-            first = subs.find("flags=");
+            unsigned int freq = std::stoi(subs.substr(first + 2, last - first - 2));
+            first = subs.find("originalFreq=");
             last = subs.find(",", first);
 
             if (first < subs.length()){
-              std::string flags = subs.substr (first + 6, last - first - 6);
 
-              bool offensive = false;
+              unsigned int originalFreq = std::stoi(subs.substr(first + 13, last - first - 13));
 
-              if (subs.find("possibly_offensive=true") < subs.length()){
-                offensive = true;
+              first = subs.find("flags=");
+              last = subs.find(",", first);
+
+              if (first < subs.length()){
+                std::string flags = subs.substr (first + 6, last - first - 6);
+
+                bool offensive = false;
+
+                if (subs.find("possibly_offensive=true") < subs.length()){
+                  offensive = true;
+                }
+
+                structWord tempO;
+
+                tempO.word = word;
+                tempO.count = 1;
+                tempO.freq = freq;
+                tempO.flags = flags;
+                tempO.orgFreq = originalFreq;
+                tempO.offensive = offensive;
+                tempO.android = 1;
+
+                dictionary.push_back(tempO);
               }
-
-              structWord tempO;
-
-              tempO.word = word;
-              tempO.count = 1;
-              tempO.freq = freq;
-              tempO.flags = flags;
-              tempO.orgFreq = originalFreq;
-              tempO.offensive = offensive;
-              tempO.android = 1;
-
-              dictionary.push_back(tempO);
             }
           }
         }
@@ -173,7 +148,6 @@ void Dictionary::loadDict(std::string fileName){
   }
 
   // Close Android dictionary file
-  std::cout << fileName << " dictionary loaded" << '\n';
   file.close();
 }
 
@@ -220,4 +194,46 @@ void Dictionary::append(std::vector<structWord> externdict){
 
 std::vector<structWord> Dictionary::getDictionaryEntries(){
   return dictionary;
+}
+
+void Dictionary::exportFile(){
+  // Open the new dictionary file to write data
+  std::ofstream outputFile("demodata/output.txt");
+
+  // Write version and timestamp
+  // Format: dictionary=main:de,locale=de,description=Deutsch,date=1414726263,version=54,REQUIRES_GERMAN_UMLAUT_PROCESSING=1
+  std::string strLocale = "de";
+  std::string strDescription = "Deutsch";
+  std::string strVersion = "56";
+
+  outputFile << "dictionary=main:" << strLocale
+             << ",locale=" << strLocale
+             << ",description=" << strDescription
+             << ",date=" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()
+             << ",version=" << strVersion
+             << ",REQUIRES_GERMAN_UMLAUT_PROCESSING=1"
+             << '\n';
+
+  int counter = 0;
+
+  // Export vector to result file
+  for (long i = 0; i < long(dictionary.size()); ++i){
+  // for (long i = 0; i < long(words.size()) || i < 10000; ++i){
+
+    std::string offensive = "";
+
+    if (dictionary[i].offensive){
+      offensive = ",possibly_offensive=true";
+    }
+
+    // Format: word=der,f=216,flags=,originalFreq=216
+    // std::cout << dictionary[i].word << '\n';
+    outputFile << " word=" << dictionary[i].word << ",f=" << dictionary[i].freq << ",flags=" << dictionary[i].flags << ",originalFreq=" << dictionary[i].freq << offensive << '\n';
+    counter += 1;
+
+  }
+
+  std::cout << "Dictionary file exported, " << counter << " entries." << '\n';
+
+  outputFile.close();
 }

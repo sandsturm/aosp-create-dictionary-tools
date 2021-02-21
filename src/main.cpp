@@ -43,10 +43,10 @@ std::string Normalize(std::string s){
 
 // Global Queues
 std::deque<std::string> g_lines;
-std::deque<std::string> g_words[32];
+std::deque<std::string> g_words;
 
 // Global Lock
-std::mutex g_mutex_lines, g_mutex_words[32], g_mutex_lines_spell, g_mutex_lines_dict;
+std::mutex g_mutex_lines, g_mutex_words, g_mutex_lines_spell, g_mutex_lines_dict;
 
 // Global Conditional Variables
 std::condition_variable g_cond, g_spell, g_dict;
@@ -75,27 +75,27 @@ void FileReader(std::string filename){
 
 
   while(std::getline(m_InputFile, line)){
-    // Smart lock, lock when initialized, protect within code curly brackets, and automatically unlock when curly brackets exit
-    // You can manually unlock to control the fine granularity of mutexes
-    std::unique_lock<std::mutex> locker(g_mutex_lines);
-
     counter += 1;
 
     if(counter % 900 == 0){
       std::cout << counter << '\r' << std::flush;
     }
 
+    // Smart lock, lock when initialized, protect within code curly brackets, and automatically unlock when curly brackets exit
+    // You can manually unlock to control the fine granularity of mutexes
+    std::unique_lock<std::mutex> locker(g_mutex_lines);
+
     // Queue a data
     g_lines.push_back(line);
+
+    // Unlock ahead of time, reduce the fine-grained mutex, and synchronize protection only for shared queue data
+    locker.unlock();
 
     if(g_lines.size() > 200){
       consume = true;
     }
 
     if(consume){
-      // Unlock ahead of time, reduce the fine-grained mutex, and synchronize protection only for shared queue data
-      locker.unlock();
-
       // Wake up a thread
       g_cond.notify_one();
       while(g_lines.size() > 50){
@@ -126,8 +126,6 @@ void LineReader(int workers){
   std::istringstream iss;
 
   bool consume = false;
-
-  int counter = 0;
 
   do{
     // Smart lock, lock when initialized, protect within code curly brackets, and automatically unlock when curly brackets exit
@@ -167,21 +165,14 @@ void LineReader(int workers){
 
          id = calc_queue(int(word.front()), workers);
 
-         std::unique_lock<std::mutex> lockerwords(g_mutex_words[id]);
-         g_words[id].push_front(word);
+         std::unique_lock<std::mutex> lockerwords(g_mutex_words);
+         g_words.push_front(word);
          lockerwords.unlock();
-
-         counter += 1;
        }
 
       } while (iss);
 
-      int counters = 0;
-
-      for(int counter = 0; counter < workers; counter++){
-        counters += g_words[counter].size();
-      }
-      if(counters > 1000){
+      if(g_words.size() > 1000){
         consume = true;
       }
 
@@ -189,14 +180,8 @@ void LineReader(int workers){
         // Wake up a thread
         g_cond.notify_one();
 
-        while(counters > 200 && producer_is_running){
+        while(g_words.size() > 200 && producer_is_running){
           std::this_thread::sleep_for(std::chrono::milliseconds(5));
-
-          counters = 0;
-
-          for(int counter = 0; counter < workers; counter++){
-            counters += g_words[counter].size();
-          }
         }
         consume = false;
       }
@@ -214,10 +199,6 @@ void LineReader(int workers){
       locker.unlock();
     }
 
-    for(int i = 0; i < workers; i++){
-      // std::cout << "ID " << i << ": " << g_words[i].size() << " ";
-      counter += g_words[i].size();
-    }
     // std::cout << '\n';
   } while(producer_is_running || g_lines.size() > 0);
 }
@@ -228,6 +209,8 @@ void Parser(int id, int workers, Spellcheck &spellcheck, Dictionary &dictionary)
     std::string subs;
     std::string word;
     std::string wordNorm;
+    Spellcheck m_Spellcheck;
+    Dictionary m_Dictionary;
 
     bool found = false;
 
@@ -235,19 +218,32 @@ void Parser(int id, int workers, Spellcheck &spellcheck, Dictionary &dictionary)
 
     int counter = 0;
 
+    m_Spellcheck.set(id, workers);
+    m_Spellcheck.open("demodata/German_de_DE.dic");
+
+    m_Dictionary.set(id, workers);
+    // Load Android dictionary
+    m_Dictionary.loadDict("demodata/de_wordlist.combined");
+    m_Dictionary.loadDict("demodata/de_wordlist.custom");
 
     do{
       // Smart lock, lock when initialized, protect within code curly brackets, and automatically unlock when curly brackets exit
       // You can manually unlock to control the fine granularity of mutexes
-      std::unique_lock<std::mutex> locker(g_mutex_words[id]);
+      std::unique_lock<std::mutex> locker(g_mutex_words);
 
       // Queue is not empty
-      if(!g_words[id].empty()){
-        // Remove the last data from the queue
-        word = g_words[id].back();
-
-        // Delete the last data in the queue
-        g_words[id].pop_back();
+      if(!g_words.empty() && ((calc_queue(int(g_words.back().front()), workers) == id) || (calc_queue(int(g_words.front().front()), workers) == id))){
+        if(calc_queue(int(g_words.back().front()), workers) == id){
+          // Remove the last data from the queue
+          word = g_words.back();
+          // Delete the last data in the queue
+          g_words.pop_back();
+        } else {
+          word = g_words.front();
+          // Delete the last data in the queue
+          g_words.pop_front();
+        }
+        counter += 1;
 
         // Unlock ahead of time, reduce the fine-grained mutex, and synchronize protection only for shared queue data
         locker.unlock();
@@ -261,13 +257,13 @@ void Parser(int id, int workers, Spellcheck &spellcheck, Dictionary &dictionary)
          std::locale loc;
 
          // Check if normalized word is in the m_Spellcheck and add it
-         if(!spellcheck.find(word)){ // If word with capital letter cannot be found
+         if(!m_Spellcheck.find(word)){ // If word with capital letter cannot be found
            if(word.front() != std::tolower(word.front(), loc)){
              wordNorm = word;
              std::string first = Normalize(word.substr(0,1));
              wordNorm.front() = first[0];
 
-             if (spellcheck.find(wordNorm)){ // but can be found with lower case letter, take this one
+             if (m_Spellcheck.find(wordNorm)){ // but can be found with lower case letter, take this one
                word = wordNorm;
                found = true;
              }
@@ -277,18 +273,13 @@ void Parser(int id, int workers, Spellcheck &spellcheck, Dictionary &dictionary)
          }
 
          if (found){
-           dictionary.addWord(word);
+           m_Dictionary.addWord(word);
          } else {
-           spellcheck.missing(word);
+           m_Spellcheck.missing(word);
          }
        }
-
-        // std::cout << "Parser[" << id << "] : " << data << std::endl;
-
-      }
-      // Queue empty
-      else
-      {
+      } else {
+        // Queue empty
         // The wait() function calls the mutually exclusive unlock() function first, then sleeps itself, and after waking up, it continues to hold the lock, protecting the queue operations that follow.
         // You must use unique_lock, not lock_guard, because lock_guard does not have lock and unlock interfaces, and unique_lock provides both
         // g_cond.wait(locker);
@@ -296,9 +287,15 @@ void Parser(int id, int workers, Spellcheck &spellcheck, Dictionary &dictionary)
         locker.unlock();
       }
 
-    } while( producer_is_running );
+    } while( producer_is_running || !g_words.empty());
 
-    // std::cout << "Parser[" << id << "] : " << counter << std::endl;
+    std::unique_lock<std::mutex> lockerspell(g_mutex_lines_spell);
+    spellcheck.append(m_Spellcheck.getMissingSpellcheck());
+    lockerspell.unlock();
+
+    std::unique_lock<std::mutex> lockerdict(g_mutex_lines_dict);
+    dictionary.append(m_Dictionary.getDictionaryEntries());
+    lockerdict.unlock();
 }
 
 int main(int argc, const char *argv[]){
@@ -350,10 +347,6 @@ int main(int argc, const char *argv[]){
     exit(0);
   }
 
-  // Load Android dictionary
-  m_Dictionary.loadDict("demodata/de_wordlist.combined");
-  m_Dictionary.loadDict("demodata/de_wordlist.custom");
-
   // Count every line of the file
   for (count = 0; std::getline(m_InputFile, line); ++count){
     if(count % 1000 == 0){
@@ -382,22 +375,20 @@ int main(int argc, const char *argv[]){
   std::thread filereader(FileReader, argv[1]);
 
   //may return 0 when not able to detect
-  // const auto processor_count = std::thread::hardware_concurrency();
-  // int consumer_processes = processor_count - 2;
-  int consumer_processes = 7;
+  const auto processor_count = std::thread::hardware_concurrency();
+  int consumer_processes = processor_count - 2;
+  // int consumer_processes = 7;
 
-  std::cout << "2 line parser start ..." << std::endl;
+  std::cout << "1 line parser start ..." << std::endl;
   std::thread linereader(LineReader, consumer_processes);
 
   std::cout << consumer_processes << " consumer start ..." << std::endl;
   std::thread consumer[consumer_processes];
 
-  Spellcheck m_Spellcheck[consumer_processes];
+  Spellcheck m_Spellcheck;
 
   for(int i = 0; i < consumer_processes; i++){
-    m_Spellcheck[i].set(i, consumer_processes);
-    m_Spellcheck[i].open("demodata/German_de_DE.dic");
-    consumer[i] = std::thread(Parser, i, consumer_processes, std::ref(m_Spellcheck[i]), std::ref(m_Dictionary));
+    consumer[i] = std::thread(Parser, i, consumer_processes, std::ref(m_Spellcheck), std::ref(m_Dictionary));
   }
 
   filereader.join();
@@ -419,14 +410,7 @@ int main(int argc, const char *argv[]){
   m_Dictionary.addFrequency();
   m_Dictionary.sortFrequency();
 
-  std::map<std::string, unsigned int> MissingSpellcheck;
-
-  for(int i = 1; i < consumer_processes; i++){
-    std::map<std::string, unsigned int> temp = m_Spellcheck[i].getMissingSpellcheck();
-    m_Spellcheck[0].append(temp);
-  }
-
-  m_Spellcheck[0].exportFile(m_Dictionary);
+  m_Spellcheck.exportFile(m_Dictionary);
   m_Dictionary.exportFile();
 
   // t1 = std::thread(&Dictionary::exportFile, &m_Dictionary);
