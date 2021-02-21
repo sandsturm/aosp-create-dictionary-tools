@@ -89,7 +89,7 @@ void Dictionary::loadDict(std::string fileName, bool custom){
       std::string s;
       s.append("word=");
       s.append(line);
-      s.append(",f=20,flags=,originalFreq=20");
+      s.append(",f=0,flags=,originalFreq=0");
       iss.str(s);
     }
 
@@ -138,7 +138,12 @@ void Dictionary::loadDict(std::string fileName, bool custom){
                 tempO.flags = flags;
                 tempO.orgFreq = originalFreq;
                 tempO.offensive = offensive;
-                tempO.android = 1;
+
+                if(custom){
+                  tempO.android = 0;
+                } else {
+                  tempO.android = 1;
+                }
 
                 dictionary.push_back(tempO);
               }
