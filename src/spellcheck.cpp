@@ -108,6 +108,7 @@ void Spellcheck::exportFile(Dictionary dictionary){
   std::vector<std::pair<std::string, unsigned int>>::iterator iter;
   unsigned int count = 0;
 
+  std::cout << "Writing file with words missing in spellcheck file." << '\n';
   for(iter = words.begin(); (iter != words.end() && count < min_wordcount) ; iter++){
     count++;
     missesSpellcheckFile << iter->first << '\n';

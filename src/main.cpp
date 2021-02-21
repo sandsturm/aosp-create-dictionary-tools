@@ -98,7 +98,7 @@ void FileReader(std::string filename){
       // Wake up a thread
       g_cond.notify_one();
       while(g_lines.size() > 50){
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
       // std::cout << "Deque size: " << g_lines.size() << '\n';
 
@@ -155,14 +155,11 @@ void LineReader(int workers){
                       std::ptr_fun<int, int>(&std::ispunct)
                      );
 
-        if(word.length() > 0 && (
-                      int(word.front()) >= 65 &&
-                      int(word.front()) <= 90) || (
-                      int(word.front()) >= 97 &&
-                      int(word.front()) <= 122)){
-         int id;
-
-         id = calc_queue(int(word.front()), workers);
+        if((word.length() > 0) && (
+                      ((int(word.front()) >= 65) &&
+                      (int(word.front()) <= 90))) || (
+                      (int(word.front()) >= 97) &&
+                      (int(word.front()) <= 122))){
 
          std::unique_lock<std::mutex> lockerwords(g_mutex_words);
          g_words.push_front(word);
@@ -171,16 +168,17 @@ void LineReader(int workers){
 
       } while (iss);
 
-      if(g_words.size() > 1000){
+      if(g_words.size() > 250){
         consume = true;
       }
+      // std::cout << "Words size: " << g_words.size() << '\n';
 
       if(consume){
         // Wake up a thread
         g_cond.notify_one();
 
-        while(g_words.size() > 200 && producer_is_running){
-          std::this_thread::sleep_for(std::chrono::milliseconds(3));
+        while(g_words.size() > 75 && producer_is_running){
+          std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         // std::cout << "Words size: " << g_words.size() << '\n';
         consume = false;
