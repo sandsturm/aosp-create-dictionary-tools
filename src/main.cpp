@@ -13,7 +13,6 @@
 #include "configuration.h"
 #include "dictionary.h"
 #include "spellcheck.h"
-#include "threads.h"
 
 inline bool isInteger(const std::string & s){
    if(s.empty() || ((!isdigit(s[0])) && (s[0] != '-') && (s[0] != '+'))) return false;
@@ -91,7 +90,7 @@ void FileReader(std::string filename){
     // Unlock ahead of time, reduce the fine-grained mutex, and synchronize protection only for shared queue data
     locker.unlock();
 
-    if(g_lines.size() > 200){
+    if(g_lines.size() > 130){
       consume = true;
     }
 
@@ -99,9 +98,9 @@ void FileReader(std::string filename){
       // Wake up a thread
       g_cond.notify_one();
       while(g_lines.size() > 50){
-        // std::cout << "Deque size: " << g_lines.size() << '\n';
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
       }
+      // std::cout << "Deque size: " << g_lines.size() << '\n';
 
       consume = false;
     }
@@ -181,13 +180,11 @@ void LineReader(int workers){
         g_cond.notify_one();
 
         while(g_words.size() > 200 && producer_is_running){
-          std::this_thread::sleep_for(std::chrono::milliseconds(5));
+          std::this_thread::sleep_for(std::chrono::milliseconds(3));
         }
+        // std::cout << "Words size: " << g_words.size() << '\n';
         consume = false;
       }
-
-      // std::cout << "Parser[" << id << "] : " << data << std::endl;
-
     }
     // Queue empty
     else
@@ -211,6 +208,7 @@ void Parser(int id, int workers, Spellcheck &spellcheck, Dictionary &dictionary)
     std::string wordNorm;
     Spellcheck m_Spellcheck;
     Dictionary m_Dictionary;
+    std::deque<std::string> words;
 
     bool found = false;
 
@@ -231,22 +229,30 @@ void Parser(int id, int workers, Spellcheck &spellcheck, Dictionary &dictionary)
       // You can manually unlock to control the fine granularity of mutexes
       std::unique_lock<std::mutex> locker(g_mutex_words);
 
-      // Queue is not empty
-      if(!g_words.empty() && ((calc_queue(int(g_words.back().front()), workers) == id) || (calc_queue(int(g_words.front().front()), workers) == id))){
+      while (!g_words.empty() && ((calc_queue(int(g_words.back().front()), workers) == id) || (calc_queue(int(g_words.front().front()), workers) == id))) {
         if(calc_queue(int(g_words.back().front()), workers) == id){
           // Remove the last data from the queue
-          word = g_words.back();
+          words.push_front(g_words.back());
           // Delete the last data in the queue
           g_words.pop_back();
         } else {
-          word = g_words.front();
-          // Delete the last data in the queue
+          // Same with front
+          words.push_front(g_words.front());
           g_words.pop_front();
         }
-        counter += 1;
+      }
 
-        // Unlock ahead of time, reduce the fine-grained mutex, and synchronize protection only for shared queue data
-        locker.unlock();
+      // Unlock ahead of time, reduce the fine-grained mutex, and synchronize protection only for shared queue data
+      locker.unlock();
+
+      // Queue is not empty
+      while(!words.empty()){
+        // Remove the last data from the queue
+        word = words.back();
+        // Delete the last data in the queue
+        words.pop_back();
+
+        counter += 1;
 
         found = false;
 
@@ -278,13 +284,6 @@ void Parser(int id, int workers, Spellcheck &spellcheck, Dictionary &dictionary)
            m_Spellcheck.missing(word);
          }
        }
-      } else {
-        // Queue empty
-        // The wait() function calls the mutually exclusive unlock() function first, then sleeps itself, and after waking up, it continues to hold the lock, protecting the queue operations that follow.
-        // You must use unique_lock, not lock_guard, because lock_guard does not have lock and unlock interfaces, and unique_lock provides both
-        // g_cond.wait(locker);
-
-        locker.unlock();
       }
 
     } while( producer_is_running || !g_words.empty());
