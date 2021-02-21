@@ -30,7 +30,7 @@ class Dictionary{
     void iCount();
     bool findWord(std::string s);
     long rowWord(std::string s);
-    void loadDict(std::string fileName);
+    void loadDict(std::string fileName, bool custom = false);
     void sortCount();
     void sortFrequency();
 

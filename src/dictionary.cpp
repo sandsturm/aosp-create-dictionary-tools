@@ -72,15 +72,26 @@ void Dictionary::addFrequency(){
   }
 }
 
-void Dictionary::loadDict(std::string fileName){
+void Dictionary::loadDict(std::string fileName, bool custom){
   // Read Android dictionary file
   std::ifstream file(fileName);
+  std::string delimiter = ",";
   std::string line;
 
   // Iterate through Android dictionary file to capture abbreviations and offensive flag
   for (long i = 0; std::getline(file, line); ++i){
     std::istringstream iss(line);
-    std::string delimiter = ",";
+
+    // Make sure the custom dictionary has the same structure
+    // word=Unterforen,f=20,flags=,originalFreq=20
+    // f=20 is just a very low frequency numnber, random
+    if(custom){
+      std::string s;
+      s.append("word=");
+      s.append(line);
+      s.append(",f=20,flags=,originalFreq=20");
+      iss.str(s);
+    }
 
     do{
       std::string subs;

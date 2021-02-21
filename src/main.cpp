@@ -3,7 +3,6 @@
 #include <sstream>
 #include <locale>
 #include <unicode/unistr.h>
-
 #include <deque>
 #include <thread>
 #include <chrono>
@@ -39,6 +38,12 @@ std::string Normalize(std::string s){
 
     // Return converted string
     return nString;
+}
+
+// Create a callback function
+int callback(void *NotUsed, int argc, char **argv, char **azColName){
+    // Return successful
+    return 0;
 }
 
 // Global Queues
@@ -191,7 +196,7 @@ void Parser(int id, int workers, Spellcheck &spellcheck, Dictionary &dictionary)
     m_Dictionary.set(id, workers);
     // Load Android dictionary
     m_Dictionary.loadDict("demodata/de_wordlist.combined");
-    m_Dictionary.loadDict("demodata/de_wordlist.custom");
+    m_Dictionary.loadDict("demodata/de_wordlist.custom", true);
 
     do{
       // Smart lock, lock when initialized, protect within code curly brackets, and automatically unlock when curly brackets exit
@@ -274,9 +279,8 @@ int main(int argc, const char *argv[]){
   std::string status = "Lines read: ";
   long count;
 
-  std::vector<std::string> wordvector;
-
   // Containers
+  std::vector<std::string> wordvector;
   std::vector<std::string> cmdLineArgs(argv, argv+argc);
 
   // Process command line arguments
