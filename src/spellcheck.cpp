@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "dictionary.h"
+#include "functions.h"
 #include "spellcheck.h"
 
 Spellcheck::Spellcheck(){
@@ -13,16 +14,6 @@ Spellcheck::Spellcheck(){
 }
 
 Spellcheck::~Spellcheck(){
-}
-
-int Spellcheck::calc_queue(int character){
-  if(character < 0){
-    return 0;
-  } else if(character > 90){
-    return (character - 97) * m_Workers / 27;
-  } else {
-    return (character - 65) * m_Workers / 27;
-  }
 }
 
 void Spellcheck::set(int id, int workers){
@@ -63,7 +54,7 @@ void Spellcheck::open(std::string s){
         subs = token;
       }
 
-      if(calc_queue(int(subs.front())) == m_Id){
+      if(calculate_queue(int(subs.front()), m_Workers) == m_Id){
         spellcheck.insert(subs);
       }
     } while (iss);
@@ -93,7 +84,7 @@ void Spellcheck::exportFile(Dictionary dictionary){
 
   // Copy missing words map contain to vector for easier sorting
   std::vector<std::pair<std::string, unsigned int>> words;
-  for (it = m_MissingSpellcheck.begin(); it != m_MissingSpellcheck.end(); it++)
+  for (it = m_MissingSpellcheck.begin(); it != m_MissingSpellcheck.end(); ++it)
       words.push_back(*it);
 
   // Sort pairs container
@@ -109,8 +100,8 @@ void Spellcheck::exportFile(Dictionary dictionary){
   unsigned int count = 0;
 
   std::cout << "Writing file with words missing in spellcheck file." << '\n';
-  for(iter = words.begin(); (iter != words.end() && count < min_wordcount) ; iter++){
-    count++;
+  for(iter = words.begin(); (iter != words.end() && count < min_wordcount) ; ++iter){
+    ++count;
     missesSpellcheckFile << iter->first << '\n';
     if(dictionary.rowWord(iter->first) < 0){
       missesDictionaryFile << iter->first << '\n';

@@ -12,6 +12,7 @@
 
 #include "configuration.h"
 #include "dictionary.h"
+#include "functions.h"
 #include "spellcheck.h"
 
 inline bool isInteger(const std::string & s){
@@ -53,25 +54,13 @@ std::condition_variable g_cond, g_spell, g_dict;
 // FileReader Run Marker
 bool producer_is_running = true;
 
-// Calculate the worker queue
-int calc_queue(int character, int workers){
-  if(character > 90){
-    return (character - 97) * workers / 27;
-  } else {
-    return (character - 65) * workers / 27;
-  }
-}
-
 // FileReader Thread Function
 void FileReader(std::string filename){
   int counter = 0;
   std::string line;
   std::ifstream m_InputFile;
 
-  bool consume = false;
-
   m_InputFile.open(filename);
-
 
   while(std::getline(m_InputFile, line)){
     counter += 1;
@@ -85,24 +74,17 @@ void FileReader(std::string filename){
     std::unique_lock<std::mutex> locker(g_mutex_lines);
 
     // Queue a data
-    g_lines.push_back(line);
+    g_lines.push_front(line);
 
     // Unlock ahead of time, reduce the fine-grained mutex, and synchronize protection only for shared queue data
     locker.unlock();
 
     if(g_lines.size() > 130){
-      consume = true;
-    }
-
-    if(consume){
       // Wake up a thread
       g_cond.notify_one();
       while(g_lines.size() > 50){
         std::this_thread::sleep_for(std::chrono::milliseconds(1));
       }
-      // std::cout << "Deque size: " << g_lines.size() << '\n';
-
-      consume = false;
     }
   }
 
@@ -123,8 +105,6 @@ void LineReader(int workers){
   std::string word;
 
   std::istringstream iss;
-
-  bool consume = false;
 
   do{
     // Smart lock, lock when initialized, protect within code curly brackets, and automatically unlock when curly brackets exit
@@ -169,19 +149,12 @@ void LineReader(int workers){
       } while (iss);
 
       if(g_words.size() > 250){
-        consume = true;
-      }
-      // std::cout << "Words size: " << g_words.size() << '\n';
-
-      if(consume){
         // Wake up a thread
         g_cond.notify_one();
 
         while(g_words.size() > 75 && producer_is_running){
           std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
-        // std::cout << "Words size: " << g_words.size() << '\n';
-        consume = false;
       }
     }
     // Queue empty
@@ -212,8 +185,6 @@ void Parser(int id, int workers, Spellcheck &spellcheck, Dictionary &dictionary)
 
     std::istringstream iss;
 
-    int counter = 0;
-
     m_Spellcheck.set(id, workers);
     m_Spellcheck.open("demodata/German_de_DE.dic");
 
@@ -227,8 +198,8 @@ void Parser(int id, int workers, Spellcheck &spellcheck, Dictionary &dictionary)
       // You can manually unlock to control the fine granularity of mutexes
       std::unique_lock<std::mutex> locker(g_mutex_words);
 
-      while (!g_words.empty() && ((calc_queue(int(g_words.back().front()), workers) == id) || (calc_queue(int(g_words.front().front()), workers) == id))) {
-        if(calc_queue(int(g_words.back().front()), workers) == id){
+      while (!g_words.empty() && ((calculate_queue(int(g_words.back().front()), workers) == id) || (calculate_queue(int(g_words.front().front()), workers) == id))) {
+        if(calculate_queue(int(g_words.back().front()), workers) == id){
           // Remove the last data from the queue
           words.push_front(g_words.back());
           // Delete the last data in the queue
@@ -249,8 +220,6 @@ void Parser(int id, int workers, Spellcheck &spellcheck, Dictionary &dictionary)
         word = words.back();
         // Delete the last data in the queue
         words.pop_back();
-
-        counter += 1;
 
         found = false;
 
@@ -384,14 +353,14 @@ int main(int argc, const char *argv[]){
 
   Spellcheck m_Spellcheck;
 
-  for(int i = 0; i < consumer_processes; i++){
+  for(int i = 0; i < consumer_processes; ++i){
     consumer[i] = std::thread(Parser, i, consumer_processes, std::ref(m_Spellcheck), std::ref(m_Dictionary));
   }
 
   filereader.join();
   linereader.join();
 
-  for(int i = 0; i < consumer_processes; i++){
+  for(int i = 0; i < consumer_processes; ++i){
     consumer[i].join();
   }
 
@@ -399,7 +368,7 @@ int main(int argc, const char *argv[]){
 
   auto stop = std::chrono::high_resolution_clock::now();
   auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count();
-  std::cout << "Duration: " << duration << " milliisec \n" << std::flush;
+  std::cout << "Duration: " << duration << " millisec \n" << std::flush;
 
   std::cout << status << "100%" << '\n' << std::flush;
 

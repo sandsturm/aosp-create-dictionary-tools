@@ -1,5 +1,3 @@
-#include "dictionary.h"
-
 #include <algorithm>
 #include <chrono>
 #include <fstream>
@@ -7,6 +5,9 @@
 #include <sstream>
 #include <string>
 #include <vector>
+
+#include "dictionary.h"
+#include "functions.h"
 
 Dictionary::Dictionary(){
 }
@@ -37,16 +38,6 @@ Dictionary::Dictionary(std::string s, unsigned int fr, std::string fl, unsigned 
   tempO.android = 0;
 
   dictionary.push_back(tempO); // Push structure object into words vector
-}
-
-int Dictionary::calc_queue(int character, int workers){
-  if(character < 0){
-    return 0;
-  } else if(character > 90){
-    return (character - 97) * workers / 27;
-  } else {
-    return (character - 65) * workers / 27;
-  }
 }
 
 void Dictionary::set(int id, int workers){
@@ -102,7 +93,7 @@ void Dictionary::loadDict(std::string fileName){
 
         std::string word = subs.substr(first + 5, last - first - 5);
 
-        if(calc_queue(word.front(), m_Workers) == m_Id){
+        if(calculate_queue(word.front(), m_Workers) == m_Id){
           first = subs.find("f=");
           last = subs.find(",", first);
 
@@ -180,7 +171,7 @@ bool Dictionary::findWord(std::string s){
 
 long Dictionary::rowWord(std::string s){
   // Search through vector
-  for (long int i = 0; i < dictionary.size(); ++i){
+  for (long unsigned int i = 0; i < dictionary.size(); ++i){
     if (dictionary[i].word.compare(s) == 0){
       return i;
     }

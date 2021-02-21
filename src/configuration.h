@@ -1,6 +1,5 @@
-#ifndef CONFIGURATION_H
-#define CONFIGURATION_H
-#pragma once
+#ifndef CONFIGURATION_H_INCLUDE
+#define CONFIGURATION_H_INCLUDE
 
 #include <map>
 #include <string>
@@ -16,4 +15,4 @@ class Configuration{
     std::string value(std::string s);
 };
 
-#endif // CONFIGURATION_H ///:~
+#endif // CONFIGURATION_H_INCLUDE ///:~

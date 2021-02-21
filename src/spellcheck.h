@@ -1,6 +1,5 @@
-#ifndef SPELLCHECK_H
-#define SPELLCHECK_H
-#pragma once
+#ifndef SPELLCHECK_H_INCLUDE
+#define SPELLCHECK_H_INCLUDE
 
 #include <fstream>
 #include <map>
@@ -27,8 +26,6 @@ class Spellcheck{
     Spellcheck();
     ~Spellcheck();
 
-    int calc_queue(int character);
-
     void set(int id, int workers);
     void exportFile(Dictionary dictionary);
     bool find(std::string s);
@@ -40,4 +37,4 @@ class Spellcheck{
     std::map<std::string, unsigned int> getMissingSpellcheck();
 };
 
-#endif // SPELLCHECK_H ///:~
+#endif // SPELLCHECK_H_INCLUDE ///:~

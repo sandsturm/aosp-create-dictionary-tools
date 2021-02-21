@@ -1,6 +1,5 @@
-#ifndef STRUCT_WORD_H
-#define STRUCT_WORD_H
-#pragma once
+#ifndef STRUCT_WORD_H_INCLUDE
+#define STRUCT_WORD_H_INCLUDE
 
 #include <string>
 
@@ -14,7 +13,7 @@ struct structWord {
   unsigned int android;
 
   void iCount(){
-    count++;
+    ++count;
   }
 };
 
@@ -48,4 +47,4 @@ struct {
   }
 } CompareFrequency;
 
-#endif // STRUCT_WORD_H ///:~
+#endif // STRUCT_WORD_H_INCLUDE ///:~

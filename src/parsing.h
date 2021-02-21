@@ -1,6 +1,4 @@
-#ifndef PARSING_H
-#define PARSING_H
-#pragma once
-
+#ifndef PARSING_H_INCLUDE
+#define PARSING_H_INCLUDE
 
 #endif

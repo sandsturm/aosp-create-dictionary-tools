@@ -1,6 +1,5 @@
-#ifndef DICTIONARY_H
-#define DICTIONARY_H
-#pragma once
+#ifndef DICTIONARY_H_INCLUDE
+#define DICTIONARY_H_INCLUDE
 
 #include <set>
 #include <string>
@@ -25,7 +24,6 @@ class Dictionary{
     Dictionary(std::string s);
     Dictionary(std::string s, unsigned int fr, std::string fl, unsigned int org, bool o);
 
-    int calc_queue(int character, int workers);
     void set(int id, int workers);
     void addWord(std::string s);
     void addFrequency();
@@ -42,4 +40,4 @@ class Dictionary{
     void exportFile();
 };
 
-#endif // DICTIONARY_H ///:~
+#endif // DICTIONARY_H_INCLUDE ///:~
